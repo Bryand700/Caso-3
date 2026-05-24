@@ -202,7 +202,7 @@ Cada jugador inicia con 100 puntos. Las predicciones se hacen con puntos (máx 1
 - result varchar 30
 - requestPayload JSON NULL
 - responsePayload JSON NULL
-- transactionReference varchar 150 -----------------------
+- transactionReference varchar 150 
 - checksum varchar 80
 - postedAt timestamp
 - createdAt timestamp
@@ -281,7 +281,7 @@ Cada jugador inicia con 100 puntos. Las predicciones se hacen con puntos (máx 1
 - propositionID PK
 - creatorPlayerID FK
 - targetPlayerID FK
-- relatedResourceID FK NULL -----------
+- relatedResourceID FK NULL
 - propositionStatusID FK
 - propositionText varchar 500
 - predictionsDeadline timestamp NULL
