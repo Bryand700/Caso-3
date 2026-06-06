@@ -41,7 +41,7 @@ CREATE TABLE rolePermissions (
     CONSTRAINT PK_rolePermissions PRIMARY KEY (userRoleID, permissionID)
 );
 GO
-CREATE TABLE currencys (
+CREATE TABLE currencies (
     currencyID BIGINT IDENTITY(1,1) NOT NULL,
     currencyCode NVARCHAR(20) NOT NULL,
     currencyName NVARCHAR(45) NOT NULL,
@@ -49,11 +49,11 @@ CREATE TABLE currencys (
     isActive BIT NOT NULL DEFAULT (1),
     createdAt DATETIME2(7) NOT NULL DEFAULT SYSDATETIME(),
     updatedAt DATETIME2(7) NULL,
-    CONSTRAINT PK_currencys PRIMARY KEY (currencyID),
-    CONSTRAINT UQ_currencys_currencyCode UNIQUE (currencyCode)
+    CONSTRAINT PK_currencies PRIMARY KEY (currencyID),
+    CONSTRAINT UQ_currencies_currencyCode UNIQUE (currencyCode)
 );
 GO
-CREATE TABLE countrys (
+CREATE TABLE countries (
     countryID BIGINT IDENTITY(1,1) NOT NULL,
     countryName NVARCHAR(50) NOT NULL,
     iso2Code CHAR(2) NOT NULL,
@@ -62,9 +62,9 @@ CREATE TABLE countrys (
     isActive BIT NOT NULL DEFAULT (1),
     createdAt DATETIME2(7) NOT NULL DEFAULT SYSDATETIME(),
     updatedAt DATETIME2(7) NULL,
-    CONSTRAINT PK_countrys PRIMARY KEY (countryID),
-    CONSTRAINT UQ_countrys_iso2Code UNIQUE (iso2Code),
-    CONSTRAINT UQ_countrys_iso3Code UNIQUE (iso3Code)
+    CONSTRAINT PK_countries PRIMARY KEY (countryID),
+    CONSTRAINT UQ_countries_iso2Code UNIQUE (iso2Code),
+    CONSTRAINT UQ_countries_iso3Code UNIQUE (iso3Code)
 );
 GO
 CREATE TABLE players (
@@ -110,9 +110,21 @@ GO
 -- =========================================
 -- GEOGRAFÍA Y MONEDAS
 -- =========================================
+CREATE TABLE exchangePairs (
+    exchangePairID BIGINT IDENTITY(1,1) NOT NULL,
+    baseCurrencyID BIGINT NOT NULL,
+    quoteCurrencyID BIGINT NOT NULL,
+    isActive BIT NOT NULL DEFAULT (1),
+    createdAt DATETIME2(7) NOT NULL DEFAULT SYSDATETIME(),
+    updatedAt DATETIME2(7) NULL,
+    CONSTRAINT PK_exchangePairs PRIMARY KEY (exchangePairID),
+    CONSTRAINT UQ_exchangePairs_baseCurrencyID_quoteCurrencyID UNIQUE (baseCurrencyID, quoteCurrencyID),
+    CONSTRAINT CK_exchangePairs_differentCurrencies CHECK (baseCurrencyID <> quoteCurrencyID)
+);
+GO
 CREATE TABLE currentExchangeRates (
     currentExchangeRateID BIGINT IDENTITY(1,1) NOT NULL,
-    exchangePairID BIGINT NULL,
+    exchangePairID BIGINT NOT NULL,
     baseCurrencyID BIGINT NOT NULL,
     quoteCurrencyID BIGINT NOT NULL,
     buyRate DECIMAL(18,6) NOT NULL CHECK (buyRate > 0),
@@ -120,6 +132,7 @@ CREATE TABLE currentExchangeRates (
     sourceName NVARCHAR(50) NOT NULL,
     updatedAt DATETIME2(7) NOT NULL DEFAULT SYSDATETIME(),
     CONSTRAINT PK_currentExchangeRates PRIMARY KEY (currentExchangeRateID),
+    CONSTRAINT UQ_currentExchangeRates_exchangePairID UNIQUE (exchangePairID),
     CONSTRAINT CK_currentExchangeRates_1 CHECK (baseCurrencyID <> quoteCurrencyID)
 );
 GO
@@ -139,6 +152,18 @@ GO
 -- =========================================
 -- CONFIGURACIÓN DE PUNTOS
 -- =========================================
+CREATE TABLE systemConfigurations (
+    systemConfigurationID BIGINT IDENTITY(1,1) NOT NULL,
+    configCode NVARCHAR(50) NOT NULL,
+    configValue NVARCHAR(255) NOT NULL,
+    configDescription NVARCHAR(200) NULL,
+    isActive BIT NOT NULL DEFAULT (1),
+    createdAt DATETIME2(7) NOT NULL DEFAULT SYSDATETIME(),
+    updatedAt DATETIME2(7) NULL,
+    CONSTRAINT PK_systemConfigurations PRIMARY KEY (systemConfigurationID),
+    CONSTRAINT UQ_systemConfigurations_configCode UNIQUE (configCode)
+);
+GO
 CREATE TABLE pointConfigurations (
     pointConfigurationID BIGINT IDENTITY(1,1) NOT NULL,
     configCode NVARCHAR(30) NOT NULL,
@@ -237,7 +262,7 @@ CREATE TABLE paymentOperationTypes (
 );
 GO
 CREATE TABLE paymentMethods (
-    paymentmethodID BIGINT IDENTITY(1,1) NOT NULL,
+    paymentMethodID BIGINT IDENTITY(1,1) NOT NULL,
     providerID BIGINT NOT NULL,
     methodName NVARCHAR(50) NOT NULL,
     methodDescription NVARCHAR(150) NULL,
@@ -246,18 +271,20 @@ CREATE TABLE paymentMethods (
     isActive BIT NOT NULL DEFAULT (1),
     createdAt DATETIME2(7) NOT NULL DEFAULT SYSDATETIME(),
     updatedAt DATETIME2(7) NULL,
-    CONSTRAINT PK_paymentMethods PRIMARY KEY (paymentmethodID),
+    CONSTRAINT PK_paymentMethods PRIMARY KEY (paymentMethodID),
     CONSTRAINT UQ_paymentMethods_methodName UNIQUE (methodName),
     CONSTRAINT CK_paymentMethods_1 CHECK (config IS NULL OR ISJSON(config) = 1)
 );
 GO
 CREATE TABLE paymentAttempts (
     paymentAttemptID BIGINT IDENTITY(1,1) NOT NULL,
-    paymentmethodID BIGINT NOT NULL,
+    paymentMethodID BIGINT NOT NULL,
     playerID BIGINT NOT NULL,
     operationTypeCodeID BIGINT NOT NULL,
-    referencedObjectID BIGINT NULL,
-    sourceObjectID BIGINT NULL,
+    targetEntityType NVARCHAR(50) NULL,
+    targetEntityID BIGINT NULL,
+    sourceEntityType NVARCHAR(50) NULL,
+    sourceEntityID BIGINT NULL,
     amount DECIMAL(18,6) NOT NULL CHECK (amount >= 0),
     currencyID BIGINT NOT NULL,
     exchangeRate DECIMAL(18,6) NOT NULL CHECK (exchangeRate >= 0),
@@ -288,15 +315,14 @@ CREATE TABLE moneyBalance (
     createdAt DATETIME2(7) NOT NULL DEFAULT SYSDATETIME(),
     updatedAt DATETIME2(7) NULL,
     CONSTRAINT PK_moneyBalance PRIMARY KEY (moneyBalanceID),
-    CONSTRAINT UQ_moneyBalance_playerID UNIQUE (playerID),
-    CONSTRAINT UQ_moneyBalance_currencyID UNIQUE (currencyID)
+    CONSTRAINT UQ_moneyBalance_playerID_currencyID UNIQUE (playerID, currencyID)
 );
 GO
 
 -- =========================================
 -- REDES SOCIALES
 -- =========================================
-CREATE TABLE socialsNetwork (
+CREATE TABLE socialNetworks (
     socialNetworkID BIGINT IDENTITY(1,1) NOT NULL,
     socialNetworkName NVARCHAR(50) NOT NULL,
     socialNetworkDescription NVARCHAR(150) NULL,
@@ -306,9 +332,9 @@ CREATE TABLE socialsNetwork (
     isActive BIT NOT NULL DEFAULT (1),
     createdAt DATETIME2(7) NOT NULL DEFAULT SYSDATETIME(),
     updatedAt DATETIME2(7) NULL,
-    CONSTRAINT PK_socialsNetwork PRIMARY KEY (socialNetworkID),
-    CONSTRAINT UQ_socialsNetwork_socialNetworkName UNIQUE (socialNetworkName),
-    CONSTRAINT CK_socialsNetwork_1 CHECK (config IS NULL OR ISJSON(config) = 1)
+    CONSTRAINT PK_socialNetworks PRIMARY KEY (socialNetworkID),
+    CONSTRAINT UQ_socialNetworks_socialNetworkName UNIQUE (socialNetworkName),
+    CONSTRAINT CK_socialNetworks_1 CHECK (config IS NULL OR ISJSON(config) = 1)
 );
 GO
 CREATE TABLE playersSocialNetwork (
@@ -325,9 +351,7 @@ CREATE TABLE playersSocialNetwork (
     createdAt DATETIME2(7) NOT NULL DEFAULT SYSDATETIME(),
     updatedAt DATETIME2(7) NULL,
     CONSTRAINT PK_playersSocialNetwork PRIMARY KEY (playerSocialNetworkID),
-    CONSTRAINT UQ_playersSocialNetwork_playerID UNIQUE (playerID),
-    CONSTRAINT UQ_playersSocialNetwork_socialNetworkID UNIQUE (socialNetworkID),
-    CONSTRAINT UQ_playersSocialNetwork_externalAccountID UNIQUE (externalAccountID)
+    CONSTRAINT UQ_playersSocialNetwork_player_social_external UNIQUE (playerID, socialNetworkID, externalAccountID)
 );
 GO
 CREATE TABLE resourceTypes (
@@ -349,28 +373,28 @@ CREATE TABLE resources (
     contentURL NVARCHAR(500) NOT NULL,
     contentHash NVARCHAR(80) NULL,
     capturedAt DATETIME2(7) NOT NULL DEFAULT SYSDATETIME(),
+    eventOccurredAt DATETIME2(7) NULL,
+    validationStatus NVARCHAR(30) NOT NULL DEFAULT ('PENDING'),
     isActive BIT NOT NULL DEFAULT (1),
     createdAt DATETIME2(7) NOT NULL DEFAULT SYSDATETIME(),
     updatedAt DATETIME2(7) NULL,
     CONSTRAINT PK_resources PRIMARY KEY (resourceID),
-    CONSTRAINT UQ_resources_playerSocialNetworkID UNIQUE (playerSocialNetworkID),
-    CONSTRAINT UQ_resources_resourceTypeID UNIQUE (resourceTypeID),
-    CONSTRAINT UQ_resources_externalResourceID UNIQUE (externalResourceID)
+    CONSTRAINT UQ_resources_playerSocialNetworkID_externalResourceID UNIQUE (playerSocialNetworkID, externalResourceID)
 );
 GO
 
 -- =========================================
 -- NÚCLEO DEL JUEGO: PROPOSICIONES
 -- =========================================
-CREATE TABLE propositionsStatus (
+CREATE TABLE propositionStatus (
     propositionStatusID BIGINT IDENTITY(1,1) NOT NULL,
     statusName NVARCHAR(50) NOT NULL,
     statusDescription NVARCHAR(150) NULL,
     isActive BIT NOT NULL DEFAULT (1),
     createdAt DATETIME2(7) NOT NULL DEFAULT SYSDATETIME(),
     updatedAt DATETIME2(7) NULL,
-    CONSTRAINT PK_propositionsStatus PRIMARY KEY (propositionStatusID),
-    CONSTRAINT UQ_propositionsStatus_statusName UNIQUE (statusName)
+    CONSTRAINT PK_propositionStatus PRIMARY KEY (propositionStatusID),
+    CONSTRAINT UQ_propositionStatus_statusName UNIQUE (statusName)
 );
 GO
 CREATE TABLE propositions (
@@ -396,8 +420,7 @@ CREATE TABLE propositionVotes (
     votedAt DATETIME2(7) NOT NULL DEFAULT SYSDATETIME(),
     createdAt DATETIME2(7) NOT NULL DEFAULT SYSDATETIME(),
     CONSTRAINT PK_propositionVotes PRIMARY KEY (propositionVoteID),
-    CONSTRAINT UQ_propositionVotes_propositionID UNIQUE (propositionID),
-    CONSTRAINT UQ_propositionVotes_voterPlayerID UNIQUE (voterPlayerID)
+    CONSTRAINT UQ_propositionVotes_propositionID_voterPlayerID UNIQUE (propositionID, voterPlayerID)
 );
 GO
 CREATE TABLE propositionStatusLogs (
@@ -458,7 +481,7 @@ CREATE TABLE predictionAmountLogs (
     CONSTRAINT PK_predictionAmountLogs PRIMARY KEY (predictionAmountLogID)
 );
 GO
-CREATE TABLE predictionOutcome (
+CREATE TABLE predictionOutcomes (
     predictionOutcomeID BIGINT IDENTITY(1,1) NOT NULL,
     predictionID BIGINT NOT NULL,
     didWin BIT NOT NULL,
@@ -467,10 +490,13 @@ CREATE TABLE predictionOutcome (
     currencyID BIGINT NULL,
     platformFeeApplied DECIMAL(18,6) NULL CHECK (platformFeeApplied IS NULL OR platformFeeApplied >= 0),
     proposerFeeApplied DECIMAL(18,6) NULL CHECK (proposerFeeApplied IS NULL OR proposerFeeApplied >= 0),
+    settlementStatus NVARCHAR(30) NOT NULL DEFAULT ('PENDING'),
+    settledByPlayerID BIGINT NULL,
     settledAt DATETIME2(7) NULL,
     createdAt DATETIME2(7) NOT NULL DEFAULT SYSDATETIME(),
-    CONSTRAINT PK_predictionOutcome PRIMARY KEY (predictionOutcomeID),
-    CONSTRAINT UQ_predictionOutcome_predictionID UNIQUE (predictionID)
+    CONSTRAINT PK_predictionOutcomes PRIMARY KEY (predictionOutcomeID),
+    CONSTRAINT UQ_predictionOutcomes_predictionID UNIQUE (predictionID),
+    CONSTRAINT CK_predictionOutcomes_winnerPrize CHECK (didWin = 0 OR pointsWon > 0 OR moneyWon > 0)
 );
 GO
 
@@ -590,8 +616,7 @@ CREATE TABLE merchantProducts (
     createdAt DATETIME2(7) NOT NULL DEFAULT SYSDATETIME(),
     updatedAt DATETIME2(7) NULL,
     CONSTRAINT PK_merchantProducts PRIMARY KEY (merchantProductID),
-    CONSTRAINT UQ_merchantProducts_merchantID UNIQUE (merchantID),
-    CONSTRAINT UQ_merchantProducts_productCode UNIQUE (productCode)
+    CONSTRAINT UQ_merchantProducts_merchantID_productCode UNIQUE (merchantID, productCode)
 );
 GO
 CREATE TABLE pointRedemption (
@@ -615,20 +640,26 @@ ALTER TABLE rolePermissions WITH CHECK ADD CONSTRAINT FK_rolePermissions_userRol
 ALTER TABLE rolePermissions CHECK CONSTRAINT FK_rolePermissions_userRoleID_userRoles;
 ALTER TABLE rolePermissions WITH CHECK ADD CONSTRAINT FK_rolePermissions_permissionID_permissions FOREIGN KEY (permissionID) REFERENCES permissions(permissionID) ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE rolePermissions CHECK CONSTRAINT FK_rolePermissions_permissionID_permissions;
-ALTER TABLE countrys WITH CHECK ADD CONSTRAINT FK_countrys_localCurrencyID_currencys FOREIGN KEY (localCurrencyID) REFERENCES currencys(currencyID) ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE countrys CHECK CONSTRAINT FK_countrys_localCurrencyID_currencys;
-ALTER TABLE players WITH CHECK ADD CONSTRAINT FK_players_countryID_countrys FOREIGN KEY (countryID) REFERENCES countrys(countryID) ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE players CHECK CONSTRAINT FK_players_countryID_countrys;
+ALTER TABLE countries WITH CHECK ADD CONSTRAINT FK_countries_localCurrencyID_currencies FOREIGN KEY (localCurrencyID) REFERENCES currencies(currencyID) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE countries CHECK CONSTRAINT FK_countries_localCurrencyID_currencies;
+ALTER TABLE players WITH CHECK ADD CONSTRAINT FK_players_countryID_countries FOREIGN KEY (countryID) REFERENCES countries(countryID) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE players CHECK CONSTRAINT FK_players_countryID_countries;
 ALTER TABLE systemUsers WITH CHECK ADD CONSTRAINT FK_systemUsers_playerID_players FOREIGN KEY (playerID) REFERENCES players(playerID) ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE systemUsers CHECK CONSTRAINT FK_systemUsers_playerID_players;
 ALTER TABLE systemUsers WITH CHECK ADD CONSTRAINT FK_systemUsers_roleID_userRoles FOREIGN KEY (roleID) REFERENCES userRoles(userRoleID) ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE systemUsers CHECK CONSTRAINT FK_systemUsers_roleID_userRoles;
 ALTER TABLE loginAttempts WITH CHECK ADD CONSTRAINT FK_loginAttempts_playerID_players FOREIGN KEY (playerID) REFERENCES players(playerID) ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE loginAttempts CHECK CONSTRAINT FK_loginAttempts_playerID_players;
-ALTER TABLE currentExchangeRates WITH CHECK ADD CONSTRAINT FK_currentExchangeRates_baseCurrencyID_currencys FOREIGN KEY (baseCurrencyID) REFERENCES currencys(currencyID) ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE currentExchangeRates CHECK CONSTRAINT FK_currentExchangeRates_baseCurrencyID_currencys;
-ALTER TABLE currentExchangeRates WITH CHECK ADD CONSTRAINT FK_currentExchangeRates_quoteCurrencyID_currencys FOREIGN KEY (quoteCurrencyID) REFERENCES currencys(currencyID) ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE currentExchangeRates CHECK CONSTRAINT FK_currentExchangeRates_quoteCurrencyID_currencys;
+ALTER TABLE exchangePairs WITH CHECK ADD CONSTRAINT FK_exchangePairs_baseCurrencyID_currencies FOREIGN KEY (baseCurrencyID) REFERENCES currencies(currencyID) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE exchangePairs CHECK CONSTRAINT FK_exchangePairs_baseCurrencyID_currencies;
+ALTER TABLE exchangePairs WITH CHECK ADD CONSTRAINT FK_exchangePairs_quoteCurrencyID_currencies FOREIGN KEY (quoteCurrencyID) REFERENCES currencies(currencyID) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE exchangePairs CHECK CONSTRAINT FK_exchangePairs_quoteCurrencyID_currencies;
+ALTER TABLE currentExchangeRates WITH CHECK ADD CONSTRAINT FK_currentExchangeRates_exchangePairID_exchangePairs FOREIGN KEY (exchangePairID) REFERENCES exchangePairs(exchangePairID) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE currentExchangeRates CHECK CONSTRAINT FK_currentExchangeRates_exchangePairID_exchangePairs;
+ALTER TABLE currentExchangeRates WITH CHECK ADD CONSTRAINT FK_currentExchangeRates_baseCurrencyID_currencies FOREIGN KEY (baseCurrencyID) REFERENCES currencies(currencyID) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE currentExchangeRates CHECK CONSTRAINT FK_currentExchangeRates_baseCurrencyID_currencies;
+ALTER TABLE currentExchangeRates WITH CHECK ADD CONSTRAINT FK_currentExchangeRates_quoteCurrencyID_currencies FOREIGN KEY (quoteCurrencyID) REFERENCES currencies(currencyID) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE currentExchangeRates CHECK CONSTRAINT FK_currentExchangeRates_quoteCurrencyID_currencies;
 ALTER TABLE historicalExchangeRates WITH CHECK ADD CONSTRAINT FK_historicalExchangeRates_currentExchangeRateID_currentExchangeRates FOREIGN KEY (currentExchangeRateID) REFERENCES currentExchangeRates(currentExchangeRateID) ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE historicalExchangeRates CHECK CONSTRAINT FK_historicalExchangeRates_currentExchangeRateID_currentExchangeRates;
 ALTER TABLE pointBalances WITH CHECK ADD CONSTRAINT FK_pointBalances_playerID_players FOREIGN KEY (playerID) REFERENCES players(playerID) ON DELETE NO ACTION ON UPDATE NO ACTION;
@@ -643,26 +674,26 @@ ALTER TABLE pointTransactions WITH CHECK ADD CONSTRAINT FK_pointTransactions_pre
 ALTER TABLE pointTransactions CHECK CONSTRAINT FK_pointTransactions_predictionID_predictions;
 ALTER TABLE paymentMethods WITH CHECK ADD CONSTRAINT FK_paymentMethods_providerID_providers FOREIGN KEY (providerID) REFERENCES providers(providerID) ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE paymentMethods CHECK CONSTRAINT FK_paymentMethods_providerID_providers;
-ALTER TABLE paymentAttempts WITH CHECK ADD CONSTRAINT FK_paymentAttempts_paymentmethodID_paymentMethods FOREIGN KEY (paymentmethodID) REFERENCES paymentMethods(paymentmethodID) ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE paymentAttempts CHECK CONSTRAINT FK_paymentAttempts_paymentmethodID_paymentMethods;
+ALTER TABLE paymentAttempts WITH CHECK ADD CONSTRAINT FK_paymentAttempts_paymentMethodID_paymentMethods FOREIGN KEY (paymentMethodID) REFERENCES paymentMethods(paymentMethodID) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE paymentAttempts CHECK CONSTRAINT FK_paymentAttempts_paymentMethodID_paymentMethods;
 ALTER TABLE paymentAttempts WITH CHECK ADD CONSTRAINT FK_paymentAttempts_playerID_players FOREIGN KEY (playerID) REFERENCES players(playerID) ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE paymentAttempts CHECK CONSTRAINT FK_paymentAttempts_playerID_players;
 ALTER TABLE paymentAttempts WITH CHECK ADD CONSTRAINT FK_paymentAttempts_operationTypeCodeID_paymentOperationTypes FOREIGN KEY (operationTypeCodeID) REFERENCES paymentOperationTypes(operationTypeCodeID) ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE paymentAttempts CHECK CONSTRAINT FK_paymentAttempts_operationTypeCodeID_paymentOperationTypes;
-ALTER TABLE paymentAttempts WITH CHECK ADD CONSTRAINT FK_paymentAttempts_currencyID_currencys FOREIGN KEY (currencyID) REFERENCES currencys(currencyID) ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE paymentAttempts CHECK CONSTRAINT FK_paymentAttempts_currencyID_currencys;
+ALTER TABLE paymentAttempts WITH CHECK ADD CONSTRAINT FK_paymentAttempts_currencyID_currencies FOREIGN KEY (currencyID) REFERENCES currencies(currencyID) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE paymentAttempts CHECK CONSTRAINT FK_paymentAttempts_currencyID_currencies;
 ALTER TABLE paymentAttempts WITH CHECK ADD CONSTRAINT FK_paymentAttempts_exchangeRateID_currentExchangeRates FOREIGN KEY (exchangeRateID) REFERENCES currentExchangeRates(currentExchangeRateID) ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE paymentAttempts CHECK CONSTRAINT FK_paymentAttempts_exchangeRateID_currentExchangeRates;
 ALTER TABLE paymentAttempts WITH CHECK ADD CONSTRAINT FK_paymentAttempts_paymentStatusID_paymentTransactionsStatus FOREIGN KEY (paymentStatusID) REFERENCES paymentTransactionsStatus(statusCodeID) ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE paymentAttempts CHECK CONSTRAINT FK_paymentAttempts_paymentStatusID_paymentTransactionsStatus;
 ALTER TABLE moneyBalance WITH CHECK ADD CONSTRAINT FK_moneyBalance_playerID_players FOREIGN KEY (playerID) REFERENCES players(playerID) ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE moneyBalance CHECK CONSTRAINT FK_moneyBalance_playerID_players;
-ALTER TABLE moneyBalance WITH CHECK ADD CONSTRAINT FK_moneyBalance_currencyID_currencys FOREIGN KEY (currencyID) REFERENCES currencys(currencyID) ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE moneyBalance CHECK CONSTRAINT FK_moneyBalance_currencyID_currencys;
+ALTER TABLE moneyBalance WITH CHECK ADD CONSTRAINT FK_moneyBalance_currencyID_currencies FOREIGN KEY (currencyID) REFERENCES currencies(currencyID) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE moneyBalance CHECK CONSTRAINT FK_moneyBalance_currencyID_currencies;
 ALTER TABLE playersSocialNetwork WITH CHECK ADD CONSTRAINT FK_playersSocialNetwork_playerID_players FOREIGN KEY (playerID) REFERENCES players(playerID) ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE playersSocialNetwork CHECK CONSTRAINT FK_playersSocialNetwork_playerID_players;
-ALTER TABLE playersSocialNetwork WITH CHECK ADD CONSTRAINT FK_playersSocialNetwork_socialNetworkID_socialsNetwork FOREIGN KEY (socialNetworkID) REFERENCES socialsNetwork(socialNetworkID) ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE playersSocialNetwork CHECK CONSTRAINT FK_playersSocialNetwork_socialNetworkID_socialsNetwork;
+ALTER TABLE playersSocialNetwork WITH CHECK ADD CONSTRAINT FK_playersSocialNetwork_socialNetworkID_socialNetworks FOREIGN KEY (socialNetworkID) REFERENCES socialNetworks(socialNetworkID) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE playersSocialNetwork CHECK CONSTRAINT FK_playersSocialNetwork_socialNetworkID_socialNetworks;
 ALTER TABLE resources WITH CHECK ADD CONSTRAINT FK_resources_playerSocialNetworkID_playersSocialNetwork FOREIGN KEY (playerSocialNetworkID) REFERENCES playersSocialNetwork(playerSocialNetworkID) ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE resources CHECK CONSTRAINT FK_resources_playerSocialNetworkID_playersSocialNetwork;
 ALTER TABLE resources WITH CHECK ADD CONSTRAINT FK_resources_resourceTypeID_resourceTypes FOREIGN KEY (resourceTypeID) REFERENCES resourceTypes(resourceTypeID) ON DELETE NO ACTION ON UPDATE NO ACTION;
@@ -673,18 +704,18 @@ ALTER TABLE propositions WITH CHECK ADD CONSTRAINT FK_propositions_targetPlayerI
 ALTER TABLE propositions CHECK CONSTRAINT FK_propositions_targetPlayerID_players;
 ALTER TABLE propositions WITH CHECK ADD CONSTRAINT FK_propositions_relatedResourceID_resources FOREIGN KEY (relatedResourceID) REFERENCES resources(resourceID) ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE propositions CHECK CONSTRAINT FK_propositions_relatedResourceID_resources;
-ALTER TABLE propositions WITH CHECK ADD CONSTRAINT FK_propositions_propositionStatusID_propositionsStatus FOREIGN KEY (propositionStatusID) REFERENCES propositionsStatus(propositionStatusID) ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE propositions CHECK CONSTRAINT FK_propositions_propositionStatusID_propositionsStatus;
+ALTER TABLE propositions WITH CHECK ADD CONSTRAINT FK_propositions_propositionStatusID_propositionStatus FOREIGN KEY (propositionStatusID) REFERENCES propositionStatus(propositionStatusID) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE propositions CHECK CONSTRAINT FK_propositions_propositionStatusID_propositionStatus;
 ALTER TABLE propositionVotes WITH CHECK ADD CONSTRAINT FK_propositionVotes_propositionID_propositions FOREIGN KEY (propositionID) REFERENCES propositions(propositionID) ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE propositionVotes CHECK CONSTRAINT FK_propositionVotes_propositionID_propositions;
 ALTER TABLE propositionVotes WITH CHECK ADD CONSTRAINT FK_propositionVotes_voterPlayerID_players FOREIGN KEY (voterPlayerID) REFERENCES players(playerID) ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE propositionVotes CHECK CONSTRAINT FK_propositionVotes_voterPlayerID_players;
 ALTER TABLE propositionStatusLogs WITH CHECK ADD CONSTRAINT FK_propositionStatusLogs_propositionID_propositions FOREIGN KEY (propositionID) REFERENCES propositions(propositionID) ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE propositionStatusLogs CHECK CONSTRAINT FK_propositionStatusLogs_propositionID_propositions;
-ALTER TABLE propositionStatusLogs WITH CHECK ADD CONSTRAINT FK_propositionStatusLogs_previousStatusCodeID_propositionsStatus FOREIGN KEY (previousStatusCodeID) REFERENCES propositionsStatus(propositionStatusID) ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE propositionStatusLogs CHECK CONSTRAINT FK_propositionStatusLogs_previousStatusCodeID_propositionsStatus;
-ALTER TABLE propositionStatusLogs WITH CHECK ADD CONSTRAINT FK_propositionStatusLogs_currentStatusCodeID_propositionsStatus FOREIGN KEY (currentStatusCodeID) REFERENCES propositionsStatus(propositionStatusID) ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE propositionStatusLogs CHECK CONSTRAINT FK_propositionStatusLogs_currentStatusCodeID_propositionsStatus;
+ALTER TABLE propositionStatusLogs WITH CHECK ADD CONSTRAINT FK_propositionStatusLogs_previousStatusCodeID_propositionStatus FOREIGN KEY (previousStatusCodeID) REFERENCES propositionStatus(propositionStatusID) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE propositionStatusLogs CHECK CONSTRAINT FK_propositionStatusLogs_previousStatusCodeID_propositionStatus;
+ALTER TABLE propositionStatusLogs WITH CHECK ADD CONSTRAINT FK_propositionStatusLogs_currentStatusCodeID_propositionStatus FOREIGN KEY (currentStatusCodeID) REFERENCES propositionStatus(propositionStatusID) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE propositionStatusLogs CHECK CONSTRAINT FK_propositionStatusLogs_currentStatusCodeID_propositionStatus;
 ALTER TABLE propositionStatusLogs WITH CHECK ADD CONSTRAINT FK_propositionStatusLogs_changedByPlayerID_players FOREIGN KEY (changedByPlayerID) REFERENCES players(playerID) ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE propositionStatusLogs CHECK CONSTRAINT FK_propositionStatusLogs_changedByPlayerID_players;
 ALTER TABLE predictions WITH CHECK ADD CONSTRAINT FK_predictions_propositionID_propositions FOREIGN KEY (propositionID) REFERENCES propositions(propositionID) ON DELETE NO ACTION ON UPDATE NO ACTION;
@@ -693,16 +724,18 @@ ALTER TABLE predictions WITH CHECK ADD CONSTRAINT FK_predictions_playerID_player
 ALTER TABLE predictions CHECK CONSTRAINT FK_predictions_playerID_players;
 ALTER TABLE predictions WITH CHECK ADD CONSTRAINT FK_predictions_predictionTypeID_predictionTypes FOREIGN KEY (predictionTypeID) REFERENCES predictionTypes(predictionTypeID) ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE predictions CHECK CONSTRAINT FK_predictions_predictionTypeID_predictionTypes;
-ALTER TABLE predictions WITH CHECK ADD CONSTRAINT FK_predictions_currencyID_currencys FOREIGN KEY (currencyID) REFERENCES currencys(currencyID) ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE predictions CHECK CONSTRAINT FK_predictions_currencyID_currencys;
+ALTER TABLE predictions WITH CHECK ADD CONSTRAINT FK_predictions_currencyID_currencies FOREIGN KEY (currencyID) REFERENCES currencies(currencyID) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE predictions CHECK CONSTRAINT FK_predictions_currencyID_currencies;
 ALTER TABLE predictions WITH CHECK ADD CONSTRAINT FK_predictions_exchangeRateID_currentExchangeRates FOREIGN KEY (exchangeRateID) REFERENCES currentExchangeRates(currentExchangeRateID) ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE predictions CHECK CONSTRAINT FK_predictions_exchangeRateID_currentExchangeRates;
 ALTER TABLE predictionAmountLogs WITH CHECK ADD CONSTRAINT FK_predictionAmountLogs_predictionID_predictions FOREIGN KEY (predictionID) REFERENCES predictions(predictionID) ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE predictionAmountLogs CHECK CONSTRAINT FK_predictionAmountLogs_predictionID_predictions;
-ALTER TABLE predictionOutcome WITH CHECK ADD CONSTRAINT FK_predictionOutcome_predictionID_predictions FOREIGN KEY (predictionID) REFERENCES predictions(predictionID) ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE predictionOutcome CHECK CONSTRAINT FK_predictionOutcome_predictionID_predictions;
-ALTER TABLE predictionOutcome WITH CHECK ADD CONSTRAINT FK_predictionOutcome_currencyID_currencys FOREIGN KEY (currencyID) REFERENCES currencys(currencyID) ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE predictionOutcome CHECK CONSTRAINT FK_predictionOutcome_currencyID_currencys;
+ALTER TABLE predictionOutcomes WITH CHECK ADD CONSTRAINT FK_predictionOutcomes_predictionID_predictions FOREIGN KEY (predictionID) REFERENCES predictions(predictionID) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE predictionOutcomes CHECK CONSTRAINT FK_predictionOutcomes_predictionID_predictions;
+ALTER TABLE predictionOutcomes WITH CHECK ADD CONSTRAINT FK_predictionOutcomes_currencyID_currencies FOREIGN KEY (currencyID) REFERENCES currencies(currencyID) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE predictionOutcomes CHECK CONSTRAINT FK_predictionOutcomes_currencyID_currencies;
+ALTER TABLE predictionOutcomes WITH CHECK ADD CONSTRAINT FK_predictionOutcomes_settledByPlayerID_players FOREIGN KEY (settledByPlayerID) REFERENCES players(playerID) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE predictionOutcomes CHECK CONSTRAINT FK_predictionOutcomes_settledByPlayerID_players;
 ALTER TABLE propositionResult WITH CHECK ADD CONSTRAINT FK_propositionResult_propositionID_propositions FOREIGN KEY (propositionID) REFERENCES propositions(propositionID) ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE propositionResult CHECK CONSTRAINT FK_propositionResult_propositionID_propositions;
 ALTER TABLE propositionResult WITH CHECK ADD CONSTRAINT FK_propositionResult_resultStatusID_propositionResultStatus FOREIGN KEY (resultStatusID) REFERENCES propositionResultStatus(resultStatusID) ON DELETE NO ACTION ON UPDATE NO ACTION;
@@ -715,8 +748,8 @@ ALTER TABLE auditLogs WITH CHECK ADD CONSTRAINT FK_auditLogs_changeSourceCode_ch
 ALTER TABLE auditLogs CHECK CONSTRAINT FK_auditLogs_changeSourceCode_changeSources;
 ALTER TABLE auditLogs WITH CHECK ADD CONSTRAINT FK_auditLogs_performedByPlayerID_players FOREIGN KEY (performedByPlayerID) REFERENCES players(playerID) ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE auditLogs CHECK CONSTRAINT FK_auditLogs_performedByPlayerID_players;
-ALTER TABLE merchants WITH CHECK ADD CONSTRAINT FK_merchants_countryID_countrys FOREIGN KEY (countryID) REFERENCES countrys(countryID) ON DELETE NO ACTION ON UPDATE NO ACTION;
-ALTER TABLE merchants CHECK CONSTRAINT FK_merchants_countryID_countrys;
+ALTER TABLE merchants WITH CHECK ADD CONSTRAINT FK_merchants_countryID_countries FOREIGN KEY (countryID) REFERENCES countries(countryID) ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE merchants CHECK CONSTRAINT FK_merchants_countryID_countries;
 ALTER TABLE merchantProducts WITH CHECK ADD CONSTRAINT FK_merchantProducts_merchantID_merchants FOREIGN KEY (merchantID) REFERENCES merchants(merchantID) ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE merchantProducts CHECK CONSTRAINT FK_merchantProducts_merchantID_merchants;
 ALTER TABLE pointRedemption WITH CHECK ADD CONSTRAINT FK_pointRedemption_playerID_players FOREIGN KEY (playerID) REFERENCES players(playerID) ON DELETE NO ACTION ON UPDATE NO ACTION;
@@ -732,7 +765,7 @@ GO
 CREATE INDEX IX_players_countryID ON players (countryID);
 CREATE INDEX IX_loginAttempts_playerID ON loginAttempts (playerID);
 CREATE INDEX IX_loginAttempts_attemptedEmail ON loginAttempts (attemptedEmail);
-CREATE INDEX IX_countrys_localCurrencyID ON countrys (localCurrencyID);
+CREATE INDEX IX_countries_localCurrencyID ON countries (localCurrencyID);
 CREATE INDEX IX_historicalExchangeRates_currentExchangeRateID ON historicalExchangeRates (currentExchangeRateID);
 CREATE INDEX IX_pointBalances_playerID ON pointBalances (playerID);
 CREATE INDEX IX_pointTransactions_playerID ON pointTransactions (playerID);
@@ -740,7 +773,7 @@ CREATE INDEX IX_pointTransactions_propositionID ON pointTransactions (propositio
 CREATE INDEX IX_pointTransactions_predictionID ON pointTransactions (predictionID);
 CREATE INDEX IX_pointTransactions_transactionDate ON pointTransactions (transactionDate);
 CREATE INDEX IX_paymentMethods_providerID ON paymentMethods (providerID);
-CREATE INDEX IX_paymentAttempts_paymentmethodID ON paymentAttempts (paymentmethodID);
+CREATE INDEX IX_paymentAttempts_paymentMethodID ON paymentAttempts (paymentMethodID);
 CREATE INDEX IX_paymentAttempts_playerID ON paymentAttempts (playerID);
 CREATE INDEX IX_paymentAttempts_operationTypeCodeID ON paymentAttempts (operationTypeCodeID);
 CREATE INDEX IX_paymentAttempts_currencyID ON paymentAttempts (currencyID);
@@ -766,7 +799,7 @@ CREATE INDEX IX_predictions_playerID ON predictions (playerID);
 CREATE INDEX IX_predictions_predictedAt ON predictions (predictedAt);
 CREATE INDEX IX_predictions_predictionTypeID ON predictions (predictionTypeID);
 CREATE INDEX IX_predictionAmountLogs_predictionID ON predictionAmountLogs (predictionID);
-CREATE INDEX IX_predictionOutcome_predictionID ON predictionOutcome (predictionID);
+CREATE INDEX IX_predictionOutcomes_predictionID ON predictionOutcomes (predictionID);
 CREATE INDEX IX_propositionResult_propositionID ON propositionResult (propositionID);
 CREATE INDEX IX_propositionResult_resultStatusID ON propositionResult (resultStatusID);
 CREATE INDEX IX_processLogs_sourceTypeID ON processLogs (sourceTypeID);
@@ -777,4 +810,17 @@ CREATE INDEX IX_merchants_countryID ON merchants (countryID);
 CREATE INDEX IX_merchantProducts_merchantID ON merchantProducts (merchantID);
 CREATE INDEX IX_pointRedemption_playerID ON pointRedemption (playerID);
 CREATE INDEX IX_pointRedemption_merchantProductID ON pointRedemption (merchantProductID);
+
+CREATE INDEX IX_exchangePairs_baseCurrencyID_quoteCurrencyID ON exchangePairs (baseCurrencyID, quoteCurrencyID);
+CREATE INDEX IX_currentExchangeRates_exchangePairID ON currentExchangeRates (exchangePairID);
+CREATE INDEX IX_predictions_propositionID_predictedAt ON predictions (propositionID, predictedAt);
+CREATE INDEX IX_pointTransactions_playerID_transactionDate ON pointTransactions (playerID, transactionDate);
+CREATE INDEX IX_paymentAttempts_playerID_postedAt ON paymentAttempts (playerID, postedAt);
+CREATE INDEX IX_propositions_status_createdAt ON propositions (propositionStatusID, createdAt);
+CREATE INDEX IX_propositionVotes_propositionID_votedAt ON propositionVotes (propositionID, votedAt);
+CREATE INDEX IX_resources_playerSocialNetworkID_capturedAt ON resources (playerSocialNetworkID, capturedAt);
+CREATE INDEX IX_auditLogs_entityName_entityID_performedAt ON auditLogs (entityName, entityID, performedAt);
+CREATE INDEX IX_processLogs_processType_processID_executedAt ON processLogs (processType, processID, executedAt);
+CREATE INDEX IX_predictionOutcomes_settledByPlayerID ON predictionOutcomes (settledByPlayerID);
 GO
+
