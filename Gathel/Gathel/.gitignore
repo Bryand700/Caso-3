@@ -4,3 +4,5 @@
 *.artifact
 report.html
 report.json
+flyway.toml
+report-code-review.sarif
