@@ -1,4 +1,0 @@
-CREATE TABLE FlywayTest (
-    Id INT PRIMARY KEY,
-    Nombre NVARCHAR(50) NOT NULL
-);
