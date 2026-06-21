@@ -1,1 +1,7 @@
 Gathel/Gathel/flyway.toml
+.DS_Store
+**/.DS_Store
+__pycache__/
+*.py[cod]
+backend/*.db
+.env
