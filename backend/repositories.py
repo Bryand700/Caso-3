@@ -37,7 +37,7 @@ class GathelReadRepository:
         normalized = identifier.strip().lower().lstrip("@")
         player = self.session.scalar(
             select(Player).where(
-                Player.isActive.is_(True),
+                Player.isActive == True,
                 or_(
                     func.lower(Player.email) == normalized,
                     func.lower(Player.username) == normalized,
@@ -52,7 +52,7 @@ class GathelReadRepository:
         return self.session.get(Player, player_id)
 
     def players(self, search: str = "") -> list[dict]:
-        statement = select(Player).where(Player.isActive.is_(True))
+        statement = select(Player).where(Player.isActive == True)
         if search:
             pattern = f"%{search.strip().lower().lstrip('@')}%"
             statement = statement.where(
@@ -81,7 +81,7 @@ class GathelReadRepository:
             .join(Currency, Currency.currencyID == Balance.currencyID)
             .where(
                 Balance.playerID == player_id,
-                Balance.isCurrent.is_(True),
+                Balance.isCurrent == True,
                 Currency.currencyCode == "POINT",
             )
         ).scalar_one_or_none()
@@ -91,7 +91,7 @@ class GathelReadRepository:
             .join(Currency, Currency.currencyID == MoneyBalance.currencyID)
             .where(
                 MoneyBalance.playerID == player_id,
-                MoneyBalance.isActive.is_(True),
+                MoneyBalance.isActive == True,
                 Currency.currencyCode == "USD",
             )
         ).first()
@@ -105,7 +105,7 @@ class GathelReadRepository:
             )
             .where(
                 Prediction.playerID == player_id,
-                Prediction.isActive.is_(True),
+                Prediction.isActive == True,
                 PropositionStatus.statusName == "activa",
             )
         )
@@ -173,7 +173,7 @@ class GathelReadRepository:
                 prediction_count.c.propositionID == Proposition.propositionID,
             )
             .where(
-                Proposition.isActive.is_(True),
+                Proposition.isActive == True,
                 PropositionStatus.statusName == "activa",
             )
             .order_by(Proposition.predictionsDeadline)

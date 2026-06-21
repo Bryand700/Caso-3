@@ -105,7 +105,7 @@ class GathelWriteService:
         social = self.session.scalar(
             select(PlayerSocialNetwork).where(
                 PlayerSocialNetwork.playerID == target_id,
-                PlayerSocialNetwork.isActive.is_(True),
+                PlayerSocialNetwork.isActive == True,
             )
         )
         resource_type = self.session.scalar(
