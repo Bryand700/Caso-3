@@ -4,3 +4,4 @@ Gathel/Gathel/flyway.toml
 __pycache__/
 *.py[cod]
 backend/*.db
+.env

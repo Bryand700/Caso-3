@@ -9,6 +9,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
+from sqlalchemy import text
+
 from config import settings
 from database import session_scope
 from demo_seed import initialize_demo_database
@@ -64,6 +66,8 @@ class GathelHandler(BaseHTTPRequestHandler):
 
     def _handle_api(self, path: str, query: dict[str, list[str]]):
         if path == "/api/health" and self.command == "GET":
+            with session_scope() as session:
+                session.execute(text("SELECT 1"))
             self._json(
                 HTTPStatus.OK,
                 {

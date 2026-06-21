@@ -1,0 +1,13 @@
+.git
+.gitignore
+.DS_Store
+**/.DS_Store
+.venv
+**/__pycache__
+**/*.pyc
+backend/*.db
+.env
+GathelDiagram.pdf
+Security Lab Documentación.pdf
+gathel_create_script.sql
+seedingGathel.sql

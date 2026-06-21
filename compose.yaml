@@ -1,0 +1,36 @@
+name: gathel
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: gathel-app:local
+    container_name: gathel-app
+    restart: unless-stopped
+    ports:
+      - "${GATHEL_API_PORT:-5080}:5080"
+    environment:
+      GATHEL_DEMO_MODE: "false"
+      GATHEL_API_HOST: "0.0.0.0"
+      GATHEL_API_PORT: "5080"
+      GATHEL_DB_POOL_SIZE: "${GATHEL_DB_POOL_SIZE:-3}"
+      GATHEL_SQL_HOST: "${GATHEL_SQL_HOST:-host.docker.internal}"
+      GATHEL_SQL_PORT: "${GATHEL_SQL_PORT:-1433}"
+      GATHEL_SQL_DATABASE: "${GATHEL_SQL_DATABASE:-Gathel}"
+      GATHEL_SQL_USER: "${GATHEL_SQL_USER:?Defina GATHEL_SQL_USER en el archivo .env}"
+      GATHEL_SQL_PASSWORD: "${GATHEL_SQL_PASSWORD:?Defina GATHEL_SQL_PASSWORD en el archivo .env}"
+      GATHEL_SQL_DRIVER: "${GATHEL_SQL_DRIVER:-ODBC Driver 18 for SQL Server}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5080/api/health', timeout=3)"
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
+

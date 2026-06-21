@@ -16,6 +16,7 @@ engine_options = {
     "pool_size": settings.pool_size,
     "max_overflow": 0,
     "pool_pre_ping": True,
+    "pool_timeout": 30,
 }
 
 if settings.database_url.startswith("sqlite"):
