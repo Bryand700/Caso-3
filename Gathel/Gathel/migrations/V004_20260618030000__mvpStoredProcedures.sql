@@ -1,30 +1,8 @@
 /* ============================================================================
    GATHEL - Stored Procedures de escritura para el MVP
+   Requiere V001 (incluye propositionPredictionCurrencies) y V002 (seeding).
    Las lecturas son responsabilidad del ORM del REST API.
 ============================================================================ */
-
-CREATE TABLE dbo.propositionPredictionCurrencies
-(
-    propositionID BIGINT NOT NULL,
-    currencyID BIGINT NOT NULL,
-    createdAt DATETIME2 NOT NULL
-        CONSTRAINT DF_propositionPredictionCurrencies_createdAt DEFAULT (SYSUTCDATETIME()),
-    CONSTRAINT PK_propositionPredictionCurrencies
-        PRIMARY KEY (propositionID, currencyID),
-    CONSTRAINT FK_propositionPredictionCurrencies_propositions
-        FOREIGN KEY (propositionID) REFERENCES dbo.propositions(propositionID),
-    CONSTRAINT FK_propositionPredictionCurrencies_currencies
-        FOREIGN KEY (currencyID) REFERENCES dbo.currencies(currencyID)
-);
-GO
-
-/* Las proposiciones existentes del seeding aceptan puntos y USD para el MVP. */
-INSERT dbo.propositionPredictionCurrencies (propositionID, currencyID)
-SELECT p.propositionID, c.currencyID
-FROM dbo.propositions p
-CROSS JOIN dbo.currencies c
-WHERE c.currencyCode IN (N'POINT', N'USD');
-GO
 
 CREATE OR ALTER PROCEDURE dbo.sp_CreateProposition
     @CreatorPlayerID BIGINT,

@@ -408,6 +408,16 @@ CREATE TABLE dbo.propositions
     CONSTRAINT FK_propositions_propositionStatus FOREIGN KEY (propositionStatusID) REFERENCES dbo.propositionStatus(propositionStatusID) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 
+CREATE TABLE dbo.propositionPredictionCurrencies
+(
+    propositionID BIGINT NOT NULL,
+    currencyID BIGINT NOT NULL,
+    createdAt DATETIME2 NOT NULL CONSTRAINT DF_propositionPredictionCurrencies_createdAt DEFAULT (SYSUTCDATETIME()),
+    CONSTRAINT PK_propositionPredictionCurrencies PRIMARY KEY (propositionID, currencyID),
+    CONSTRAINT FK_propositionPredictionCurrencies_propositions FOREIGN KEY (propositionID) REFERENCES dbo.propositions(propositionID) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    CONSTRAINT FK_propositionPredictionCurrencies_currencies FOREIGN KEY (currencyID) REFERENCES dbo.currencies(currencyID) ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
 CREATE TABLE dbo.propositionVoteTypes
 (
     propositionVoteTypeID BIGINT IDENTITY(1,1) NOT NULL,
@@ -912,6 +922,7 @@ CREATE INDEX IX_propositions_targetPlayerID ON dbo.propositions(targetPlayerID);
 CREATE INDEX IX_propositions_relatedResourceID ON dbo.propositions(relatedResourceID);
 CREATE INDEX IX_propositions_propositionStatusID ON dbo.propositions(propositionStatusID);
 CREATE INDEX IX_propositions_predictionsDeadline ON dbo.propositions(predictionsDeadline);
+CREATE INDEX IX_propositionPredictionCurrencies_currencyID ON dbo.propositionPredictionCurrencies(currencyID);
 CREATE INDEX IX_propositionVotes_propositionID ON dbo.propositionVotes(propositionID);
 CREATE INDEX IX_propositionVotes_voterPlayerID ON dbo.propositionVotes(voterPlayerID);
 
