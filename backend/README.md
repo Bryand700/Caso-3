@@ -92,6 +92,20 @@ GO
 No se asigna `db_datawriter`: las escrituras del MVP deben pasar por los Stored
 Procedures.
 
+V003 registra `gathel_app` en
+`SecurityLab.ApplicationServiceAccounts`. Esto permite que la cuenta técnica
+del REST API consulte las proposiciones protegidas por Row-Level Security sin
+eliminar la restricción de los usuarios del laboratorio.
+
+Si utiliza otro nombre en `GATHEL_SQL_USER`, regístrelo también:
+
+```sql
+INSERT SecurityLab.ApplicationServiceAccounts
+    (dbUserName, serviceDescription, isActive)
+VALUES
+    (N'otro_usuario_api', N'Cuenta técnica alternativa del REST API', 1);
+```
+
 ### 3. Crear `.env`
 
 Desde la raíz del repositorio:
@@ -188,7 +202,7 @@ Problemas habituales:
 - SQL Server está configurado únicamente para Windows Authentication.
 - El firewall bloquea el acceso al puerto.
 - La clave del `.env` no coincide con el login.
-- Flyway todavía no aplicó V004.
+- Flyway todavía no aplicó V003 o V004.
 
 ## Ejecución inmediata sin instalaciones
 

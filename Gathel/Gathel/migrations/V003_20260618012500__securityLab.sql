@@ -185,6 +185,54 @@ WHEN NOT MATCHED THEN
     INSERT (dbUserName, playerID)
     VALUES (source.dbUserName, source.playerID);
 
+/* El REST API utiliza una única cuenta técnica para representar a múltiples
+   jugadores autenticados por la aplicación. Estas cuentas necesitan consultar
+   todas las proposiciones, pero no deben asociarse con un único playerID. */
+IF OBJECT_ID(N'SecurityLab.ApplicationServiceAccounts', N'U') IS NULL
+BEGIN
+    CREATE TABLE SecurityLab.ApplicationServiceAccounts
+    (
+        dbUserName SYSNAME NOT NULL,
+        serviceDescription NVARCHAR(200) NOT NULL,
+        isActive BIT NOT NULL
+            CONSTRAINT DF_ApplicationServiceAccounts_isActive DEFAULT (1),
+        createdAt DATETIME2 NOT NULL
+            CONSTRAINT DF_ApplicationServiceAccounts_createdAt DEFAULT (SYSUTCDATETIME()),
+        updatedAt DATETIME2 NULL,
+        CONSTRAINT PK_ApplicationServiceAccounts PRIMARY KEY (dbUserName)
+    );
+END;
+
+IF EXISTS
+(
+    SELECT 1
+    FROM SecurityLab.ApplicationServiceAccounts
+    WHERE dbUserName = N'gathel_app'
+)
+BEGIN
+    UPDATE SecurityLab.ApplicationServiceAccounts
+    SET
+        serviceDescription = N'Cuenta técnica utilizada por el REST API de Gathel',
+        isActive = 1,
+        updatedAt = SYSUTCDATETIME()
+    WHERE dbUserName = N'gathel_app';
+END
+ELSE
+BEGIN
+    INSERT SecurityLab.ApplicationServiceAccounts
+    (
+        dbUserName,
+        serviceDescription,
+        isActive
+    )
+    VALUES
+    (
+        N'gathel_app',
+        N'Cuenta técnica utilizada por el REST API de Gathel',
+        1
+    );
+END;
+
 IF EXISTS (SELECT 1 FROM sys.security_policies WHERE name = N'PropositionSecurityPolicy' AND schema_id = SCHEMA_ID(N'SecurityLab'))
 BEGIN
     DROP SECURITY POLICY SecurityLab.PropositionSecurityPolicy;
@@ -204,11 +252,22 @@ RETURN
     WHERE EXISTS
     (
         SELECT 1
-        FROM SecurityLab.UserPlayerMap AS m
-        WHERE m.dbUserName = USER_NAME()
-          AND (m.playerID = @creatorPlayerID OR m.playerID = @targetPlayerID)
+        FROM SecurityLab.UserPlayerMap AS playerMap
+        WHERE playerMap.dbUserName = USER_NAME()
+          AND
+          (
+              playerMap.playerID = @creatorPlayerID
+              OR playerMap.playerID = @targetPlayerID
+          )
     )
     OR USER_NAME() = N''lab_auditor''
+    OR EXISTS
+    (
+        SELECT 1
+        FROM SecurityLab.ApplicationServiceAccounts AS serviceAccount
+        WHERE serviceAccount.dbUserName = USER_NAME()
+          AND serviceAccount.isActive = 1
+    )
 ');
 
 EXEC(N'
