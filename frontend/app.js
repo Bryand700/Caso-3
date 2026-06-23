@@ -10,6 +10,7 @@ const state = {
   modal: null,
   prediction: { answer: "yes", currency: "POINT", amount: "1" },
   propositionTarget: "other",
+  playerSearch: "",
   mobileMenu: false,
   toast: null,
   search: "",
@@ -18,135 +19,19 @@ const state = {
 };
 
 let currentUser = {
-  id: 1,
-  name: "Daniela Mora",
-  username: "@danimora",
-  initials: "DM",
-  points: 184,
-  money: 72.45,
+  id: null,
+  name: "",
+  username: "",
+  initials: "",
+  points: 0,
+  money: 0,
   currency: "USD",
-  activePredictions: 8,
+  activePredictions: 0,
 };
 
-let propositions = [
-  {
-    id: 1402,
-    title: "Sofía terminará la media maratón en menos de 2 horas",
-    target: "Sofía Rojas",
-    username: "@sofiaruns",
-    initials: "SR",
-    creator: "Luis Mora",
-    deadline: "Hoy, 8:30 p. m.",
-    relative: "Cierra en 6 h",
-    status: "active",
-    statusLabel: "Activa",
-    stakes: ["POINT", "USD"],
-    predictions: 126,
-    resourceType: "Publicación",
-    resourceUrl: "https://social.example/post/sofia-10k",
-    colors: ["#f1c98b", "#d98d79"],
-  },
-  {
-    id: 1437,
-    title: "Andrés publicará su primera canción antes del viernes",
-    target: "Andrés Solís",
-    username: "@andresolis",
-    initials: "AS",
-    creator: "Camila Núñez",
-    deadline: "Mañana, 5:00 p. m.",
-    relative: "Cierra en 27 h",
-    status: "active",
-    statusLabel: "Activa",
-    stakes: ["POINT"],
-    predictions: 84,
-    resourceType: "Video",
-    resourceUrl: "https://social.example/video/andres-demo",
-    colors: ["#a9c8dd", "#738ab9"],
-  },
-  {
-    id: 1451,
-    title: "Valeria llegará a la cima del Cerro Chirripó este fin de semana",
-    target: "Valeria Castro",
-    username: "@valecastro",
-    initials: "VC",
-    creator: "Pablo Vargas",
-    deadline: "Sáb, 10:00 a. m.",
-    relative: "Cierra en 3 días",
-    status: "active",
-    statusLabel: "Activa",
-    stakes: ["POINT", "USD"],
-    predictions: 211,
-    resourceType: "Historia",
-    resourceUrl: "https://social.example/story/vale-chirripo",
-    colors: ["#b8d7b1", "#6d9d77"],
-  },
-  {
-    id: 1460,
-    title: "Mateo completará 30 días consecutivos de entrenamiento",
-    target: "Mateo Herrera",
-    username: "@mateoh",
-    initials: "MH",
-    creator: "Mateo Herrera",
-    deadline: "Dom, 7:00 p. m.",
-    relative: "Cierra en 4 días",
-    status: "active",
-    statusLabel: "Activa",
-    stakes: ["POINT"],
-    predictions: 59,
-    resourceType: "Reel",
-    resourceUrl: "https://social.example/reel/mateo-day-26",
-    colors: ["#c7b5dc", "#8c72ae"],
-  },
-  {
-    id: 1478,
-    title: "Laura presentará su nuevo emprendimiento durante junio",
-    target: "Laura Jiménez",
-    username: "@lauraj",
-    initials: "LJ",
-    creator: "José Brenes",
-    deadline: "25 jun, 12:00 p. m.",
-    relative: "Cierra en 7 días",
-    status: "active",
-    statusLabel: "Activa",
-    stakes: ["USD"],
-    predictions: 43,
-    resourceType: "Publicación",
-    resourceUrl: "https://social.example/post/laura-project",
-    colors: ["#efd2a7", "#d09a64"],
-  },
-  {
-    id: 1490,
-    title: "Diego cocinará una receta completa en transmisión en vivo",
-    target: "Diego Chaves",
-    username: "@diegococina",
-    initials: "DC",
-    creator: "Natalia Salas",
-    deadline: "28 jun, 6:00 p. m.",
-    relative: "Cierra en 10 días",
-    status: "active",
-    statusLabel: "Activa",
-    stakes: ["POINT", "USD"],
-    predictions: 95,
-    resourceType: "Video",
-    resourceUrl: "https://social.example/video/diego-kitchen",
-    colors: ["#eda98d", "#c87168"],
-  },
-];
-
-let results = [
-  { id: 1321, title: "Camila completará su primera carrera de 10 km", result: true, answer: true, stake: "1 pt", gain: "+2.4 pts", date: "16 jun 2026" },
-  { id: 1304, title: "Javier publicará el episodio 20 de su podcast", result: false, answer: true, stake: "$8.00", gain: "-$8.00", date: "14 jun 2026" },
-  { id: 1288, title: "María alcanzará 5 000 seguidores durante mayo", result: true, answer: true, stake: "$12.00", gain: "+$21.60", date: "2 jun 2026" },
-  { id: 1271, title: "Fernando viajará fuera del país antes de junio", result: false, answer: false, stake: "1 pt", gain: "+1.8 pts", date: "30 may 2026" },
-  { id: 1259, title: "Lucía presentará una nueva colección el viernes", result: true, answer: false, stake: "1 pt", gain: "-1 pt", date: "24 may 2026" },
-];
-
-let activities = [
-  { icon: "trophy", title: "Pronóstico acertado", detail: "Ganaste 2.4 pts en la proposición de Camila.", time: "Hace 2 horas" },
-  { icon: "clock", title: "Cierre próximo", detail: "Tu pronóstico sobre Sofía cierra hoy.", time: "Hace 4 horas" },
-  { icon: "spark", title: "Proposición activa", detail: "La proposición #1391 ya acepta pronósticos.", time: "Ayer" },
-  { icon: "wallet", title: "Saldo actualizado", detail: "Se acreditaron $18.50 a tu balance.", time: "Ayer" },
-];
+let propositions = [];
+let results = [];
+let activities = [];
 
 const routeMeta = {
   inicio: "Inicio",
@@ -156,6 +41,7 @@ const routeMeta = {
 };
 
 let availablePlayers = [];
+let playerSearchTimer = null;
 
 async function apiRequest(path, options = {}) {
   const token = sessionStorage.getItem(API_TOKEN_KEY);
@@ -192,6 +78,15 @@ function relativeDeadline(value) {
   return `Cierra en ${Math.round(hours / 24)} días`;
 }
 
+function currentDateLabel() {
+  const date = new Intl.DateTimeFormat("es-CR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(new Date());
+  return date.charAt(0).toUpperCase() + date.slice(1);
+}
+
 function colorsFor(id) {
   const palettes = [
     ["#f1c98b", "#d98d79"],
@@ -205,6 +100,8 @@ function colorsFor(id) {
 }
 
 function mapProposition(item) {
+  const deadlineDate = new Date(item.deadline);
+  const hoursUntilDeadline = (deadlineDate.getTime() - Date.now()) / 3600000;
   return {
     id: item.id,
     title: item.title,
@@ -214,6 +111,7 @@ function mapProposition(item) {
     creator: item.creator.name,
     deadline: formatDeadline(item.deadline),
     relative: relativeDeadline(item.deadline),
+    closesSoon: hoursUntilDeadline >= 0 && hoursUntilDeadline <= 24,
     status: "active",
     statusLabel: "Activa",
     stakes: item.currencies,
@@ -370,12 +268,12 @@ function loginPage() {
           <div class="floating-card">
             <div class="floating-head">
               <div class="floating-profile">
-                <span class="mini-avatar">SR</span>
-                <div><strong>Sofía Rojas</strong><div style="font-size:11px;color:#9baba6;margin-top:3px">@sofiaruns</div></div>
+                <span class="mini-avatar">GT</span>
+                <div><strong>Jugador Gathel</strong><div style="font-size:11px;color:#9baba6;margin-top:3px">@jugador</div></div>
               </div>
               <span class="live-pill">ACTIVA</span>
             </div>
-            <div class="floating-question">¿Sofía terminará la media maratón en menos de 2 horas?</div>
+            <div class="floating-question">¿La proposición registrada se cumplirá dentro del plazo?</div>
             <div class="floating-actions">
               <div class="choice-preview active">Sí, se cumplirá</div>
               <div class="choice-preview">No se cumplirá</div>
@@ -393,7 +291,7 @@ function dashboardPage() {
     <div class="page">
       <div class="page-head">
         <div>
-          <span class="eyebrow">Jueves, 18 de junio</span>
+          <span class="eyebrow">${currentDateLabel()}</span>
           <h1 class="page-title">Hola, ${escapeHtml(currentUser.name.split(" ")[0])} 👋</h1>
           <p class="page-subtitle">Esto es lo que está pasando en tu juego hoy.</p>
         </div>
@@ -401,9 +299,9 @@ function dashboardPage() {
       </div>
 
       <section class="summary-grid" aria-label="Resumen de cuenta">
-        ${summaryCard("Puntos disponibles", `${currentUser.points} pts`, "+12 esta semana", "spark", "dark")}
+        ${summaryCard("Puntos disponibles", `${currentUser.points} pts`, "Balance actual", "spark", "dark")}
         ${summaryCard("Balance de dinero", `$${currentUser.money.toFixed(2)}`, "USD disponible", "wallet", "lime")}
-        ${summaryCard("Pronósticos activos", currentUser.activePredictions, "3 cierran pronto", "clock", "")}
+        ${summaryCard("Pronósticos activos", currentUser.activePredictions, "Según la base de datos", "clock", "")}
       </section>
 
       <div class="content-grid">
@@ -413,7 +311,7 @@ function dashboardPage() {
             <button class="view-all" data-route="proposiciones">Ver todas ${icon("chevron")}</button>
           </div>
           <div class="proposition-list">
-            ${filtered.map(propositionRow).join("")}
+            ${filtered.length ? filtered.map(propositionRow).join("") : emptyState("Sin proposiciones activas", "Cuando existan proposiciones activas en la base, aparecerán aquí.")}
           </div>
         </section>
         <section class="panel">
@@ -547,10 +445,17 @@ function createPage() {
           </div>
           ${state.propositionTarget === "other" ? `
             <div class="field">
-              <label for="target">Jugador asociado</label>
+              <label for="target-search">Buscar jugador</label>
+              <div class="input-wrap">
+                ${icon("search")}
+                <input class="input" id="target-search" type="search" placeholder="Escribe nombre o usuario, ej. B" value="${escapeHtml(state.playerSearch)}" autocomplete="off">
+              </div>
+              <small id="target-search-help" style="color:var(--muted)">Escribe una letra o nombre para refrescar los posibles jugadores.</small>
+            </div>
+            <div class="field">
+              <label for="target">Resultados</label>
               <select class="select" id="target" required>
-                <option value="">Selecciona un jugador</option>
-                ${availablePlayers.map(player => `<option value="${player.id}">${escapeHtml(player.name)} — ${escapeHtml(player.username)}</option>`).join("")}
+                ${playerOptionsTemplate(availablePlayers)}
               </select>
             </div>` : `
             <div class="resource-box" style="margin-bottom:18px">
@@ -560,7 +465,7 @@ function createPage() {
             </div>`}
           <div class="field">
             <label for="proposition">Proposición</label>
-            <textarea class="textarea" id="proposition" maxlength="500" placeholder="Ej. Sofía terminará la media maratón en menos de 2 horas" required></textarea>
+            <textarea class="textarea" id="proposition" maxlength="500" placeholder="Ej. El jugador completará el reto registrado antes del cierre" required></textarea>
             <small style="color:var(--muted)">Debe ser específica y tener un resultado verificable.</small>
           </div>
           <div class="form-divider"></div>
@@ -617,6 +522,35 @@ function createPage() {
   `);
 }
 
+function playerOptionsTemplate(players) {
+  const options = players
+    .map(player => `<option value="${player.id}">${escapeHtml(player.name)} — ${escapeHtml(player.username)}</option>`)
+    .join("");
+  return `
+    <option value="">Selecciona un jugador</option>
+    ${options || `<option value="" disabled>Sin coincidencias</option>`}
+  `;
+}
+
+function updateTargetPlayerOptions(players, search) {
+  const targetSelect = document.querySelector("#target");
+  const help = document.querySelector("#target-search-help");
+  if (!targetSelect) return;
+  targetSelect.innerHTML = playerOptionsTemplate(players);
+  if (help) {
+    const cleanSearch = search.trim();
+    help.textContent = cleanSearch
+      ? `${players.length} coincidencia${players.length === 1 ? "" : "s"} para "${cleanSearch}".`
+      : "Escribe una letra o nombre para refrescar los posibles jugadores.";
+  }
+}
+
+async function searchTargetPlayers(search) {
+  const players = await apiRequest(`/api/players?search=${encodeURIComponent(search)}`);
+  availablePlayers = players.filter(player => player.id !== currentUser.id);
+  updateTargetPlayerOptions(availablePlayers, search);
+}
+
 function resultsPage() {
   return appLayout(`
     <div class="page">
@@ -631,7 +565,7 @@ function resultsPage() {
         <div class="table-row table-head">
           <span>Proposición</span><span>Resultado</span><span>Tu pronóstico</span><span>Apuesta</span><span>Balance</span>
         </div>
-        ${results.map(resultRow).join("")}
+        ${results.length ? results.map(resultRow).join("") : emptyState("Sin resultados", "Todavía no hay resultados finalizados para este jugador.")}
       </section>
     </div>
   `);
@@ -705,8 +639,8 @@ function toastTemplate(toast) {
   return `<div class="toast"><span class="activity-icon">${icon("check")}</span><span><strong>${toast.title}</strong><span>${toast.message}</span></span></div>`;
 }
 
-function emptyState() {
-  return `<div class="panel empty-state"><span class="activity-icon">${icon("search")}</span><h3>Sin coincidencias</h3><p>Prueba con otra búsqueda o filtro.</p></div>`;
+function emptyState(title = "Sin coincidencias", message = "Prueba con otra búsqueda o filtro.") {
+  return `<div class="panel empty-state"><span class="activity-icon">${icon("search")}</span><h3>${escapeHtml(title)}</h3><p>${escapeHtml(message)}</p></div>`;
 }
 
 function filterPropositions(items) {
@@ -716,7 +650,7 @@ function filterPropositions(items) {
     const matchesFilter =
       state.filter === "todas" ||
       prop.stakes.includes(state.filter) ||
-      (state.filter === "pronto" && ["Hoy, 8:30 p. m.", "Mañana, 5:00 p. m."].includes(prop.deadline));
+      (state.filter === "pronto" && prop.closesSoon);
     return matchesSearch && matchesFilter;
   });
 }
@@ -825,6 +759,18 @@ function bindEvents() {
       state.propositionTarget = button.dataset.targetChoice;
       render();
     });
+  });
+
+  document.querySelector("#target-search")?.addEventListener("input", event => {
+    state.playerSearch = event.target.value;
+    window.clearTimeout(playerSearchTimer);
+    playerSearchTimer = window.setTimeout(async () => {
+      try {
+        await searchTargetPlayers(state.playerSearch);
+      } catch (error) {
+        showToast("No se pudo buscar", error.message);
+      }
+    }, 250);
   });
 
   document.querySelectorAll("[data-action='close-modal']").forEach(element => {
