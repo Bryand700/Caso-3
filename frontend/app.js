@@ -344,14 +344,14 @@ function loginPage() {
             <label for="email">Correo electrónico</label>
             <div class="input-wrap">
               ${icon("user")}
-              <input class="input" id="email" name="email" type="text" value="daniela@gathel.local" required autocomplete="username">
+              <input class="input" id="email" name="email" type="text" placeholder="usuario@correo.com" required autocomplete="username">
             </div>
           </div>
           <div class="field">
             <label for="password">Contraseña</label>
             <div class="input-wrap">
               ${icon("link")}
-              <input class="input" id="password" name="password" type="password" value="DemoGathel2026" required autocomplete="current-password">
+              <input class="input" id="password" name="password" type="password" required autocomplete="current-password">
             </div>
           </div>
           <div class="helper-row">
@@ -359,8 +359,8 @@ function loginPage() {
             <button type="button" class="text-link">¿Olvidaste tu contraseña?</button>
           </div>
           <button class="btn btn-primary btn-block" type="submit">Entrar a Gathel ${icon("arrow")}</button>
-          ${state.error ? `<p class="demo-note" style="color:var(--red)">${escapeHtml(state.error)}</p>` : ""}
-          <p class="demo-note">Demo local: daniela@gathel.local / DemoGathel2026</p>
+          ${state.error ? `<p class="form-note" style="color:var(--red)">${escapeHtml(state.error)}</p>` : ""}
+          <p class="form-note">Ingresa con un jugador existente en la base de datos Gathel.</p>
         </form>
       </div>
       <div class="login-art" aria-hidden="true">
@@ -394,7 +394,7 @@ function dashboardPage() {
       <div class="page-head">
         <div>
           <span class="eyebrow">Jueves, 18 de junio</span>
-          <h1 class="page-title">Hola, Daniela 👋</h1>
+          <h1 class="page-title">Hola, ${escapeHtml(currentUser.name.split(" ")[0])} 👋</h1>
           <p class="page-subtitle">Esto es lo que está pasando en tu juego hoy.</p>
         </div>
         <button class="btn btn-dark" data-route="crear">${icon("plus")} Crear proposición</button>

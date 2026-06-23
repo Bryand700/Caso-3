@@ -7,13 +7,12 @@ Frontend web responsive del MVP de Gathel. Consume el REST API incluido en `back
 La forma recomendada es ejecutar el backend, que también sirve estos archivos:
 
 ```bash
-cd backend
-GATHEL_DEMO_MODE=true python3 app.py
+python3 backend/app.py
 ```
 
 Luego abra `http://127.0.0.1:5080`.
 
-Credenciales: `daniela@gathel.local` / `DemoGathel2026`.
+Use las credenciales de un jugador existente en la base SQL Server `Gathel`.
 
 ## Alcance implementado
 
@@ -28,7 +27,7 @@ Credenciales: `daniela@gathel.local` / `DemoGathel2026`.
 
 ## Límites intencionales
 
-- En modo demo los datos provienen de SQLite; en modo SQL Server provienen del esquema y seeding Flyway.
+- Los datos provienen del esquema y seeding Flyway en SQL Server.
 - No hay integración real con redes sociales ni inteligencia artificial.
 - El frontend no muestra razonamiento, análisis, autenticidad ni pasos internos de validación.
 - Votaciones, aceptación, cierre, liquidaciones, penalizaciones y otros workflows avanzados quedan fuera del flujo del MVP.
@@ -46,4 +45,4 @@ Credenciales: `daniela@gathel.local` / `DemoGathel2026`.
 | `POST` | `/api/predictions` | Registrar pronóstico mediante Stored Procedure |
 | `GET` | `/api/propositions/results` | Consultar resultados finalizados |
 
-Las lecturas están implementadas con SQLAlchemy ORM. En modo SQL Server las escrituras llaman directamente a Stored Procedures.
+Las lecturas están implementadas con SQLAlchemy ORM. Las escrituras llaman directamente a Stored Procedures.

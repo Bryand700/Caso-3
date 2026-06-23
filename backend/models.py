@@ -3,18 +3,18 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, Numeric, String
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database import Base
 
-IDENTITY_TYPE = BigInteger().with_variant(Integer, "sqlite")
+identityType = BigInteger()
 
 
 class Player(Base):
     __tablename__ = "players"
 
-    playerID: Mapped[int] = mapped_column(IDENTITY_TYPE, primary_key=True, autoincrement=True)
+    playerID: Mapped[int] = mapped_column(identityType, primary_key=True, autoincrement=True)
     countryID: Mapped[int] = mapped_column(BigInteger)
     email: Mapped[str] = mapped_column(String(150), unique=True)
     username: Mapped[str] = mapped_column(String(50), unique=True)
@@ -32,7 +32,7 @@ class Player(Base):
 class Currency(Base):
     __tablename__ = "currencies"
 
-    currencyID: Mapped[int] = mapped_column(IDENTITY_TYPE, primary_key=True, autoincrement=True)
+    currencyID: Mapped[int] = mapped_column(identityType, primary_key=True, autoincrement=True)
     currencyCode: Mapped[str] = mapped_column(String(20), unique=True)
     currencyName: Mapped[str] = mapped_column(String(45))
     currencySymbol: Mapped[str] = mapped_column(String(30))
@@ -44,7 +44,7 @@ class Currency(Base):
 class Balance(Base):
     __tablename__ = "balances"
 
-    balanceID: Mapped[int] = mapped_column(IDENTITY_TYPE, primary_key=True, autoincrement=True)
+    balanceID: Mapped[int] = mapped_column(identityType, primary_key=True, autoincrement=True)
     playerID: Mapped[int] = mapped_column(BigInteger, ForeignKey("players.playerID"))
     currencyID: Mapped[int] = mapped_column(BigInteger, ForeignKey("currencies.currencyID"))
     availableAmount: Mapped[Decimal] = mapped_column(Numeric(18, 6))
@@ -59,7 +59,7 @@ class Balance(Base):
 class MoneyBalance(Base):
     __tablename__ = "moneyBalance"
 
-    moneyBalanceID: Mapped[int] = mapped_column(IDENTITY_TYPE, primary_key=True, autoincrement=True)
+    moneyBalanceID: Mapped[int] = mapped_column(identityType, primary_key=True, autoincrement=True)
     playerID: Mapped[int] = mapped_column(BigInteger, ForeignKey("players.playerID"))
     currencyID: Mapped[int] = mapped_column(BigInteger, ForeignKey("currencies.currencyID"))
     availableAmount: Mapped[Decimal] = mapped_column(Numeric(18, 6))
@@ -74,7 +74,7 @@ class MoneyBalance(Base):
 class PropositionStatus(Base):
     __tablename__ = "propositionStatus"
 
-    propositionStatusID: Mapped[int] = mapped_column(IDENTITY_TYPE, primary_key=True, autoincrement=True)
+    propositionStatusID: Mapped[int] = mapped_column(identityType, primary_key=True, autoincrement=True)
     statusName: Mapped[str] = mapped_column(String(50), unique=True)
     statusDescription: Mapped[str] = mapped_column(String(150))
     isActive: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -84,7 +84,7 @@ class PropositionStatus(Base):
 class ResourceType(Base):
     __tablename__ = "resourceTypes"
 
-    resourceTypeID: Mapped[int] = mapped_column(IDENTITY_TYPE, primary_key=True, autoincrement=True)
+    resourceTypeID: Mapped[int] = mapped_column(identityType, primary_key=True, autoincrement=True)
     resourceTypeName: Mapped[str] = mapped_column(String(50), unique=True)
     resourceTypeDescription: Mapped[str] = mapped_column(String(150))
     isActive: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -94,7 +94,7 @@ class ResourceType(Base):
 class PlayerSocialNetwork(Base):
     __tablename__ = "playersSocialNetwork"
 
-    playerSocialNetworkID: Mapped[int] = mapped_column(IDENTITY_TYPE, primary_key=True, autoincrement=True)
+    playerSocialNetworkID: Mapped[int] = mapped_column(identityType, primary_key=True, autoincrement=True)
     playerID: Mapped[int] = mapped_column(BigInteger, ForeignKey("players.playerID"))
     socialNetworkID: Mapped[int] = mapped_column(BigInteger)
     externalAccountID: Mapped[str] = mapped_column(String(150))
@@ -109,7 +109,7 @@ class PlayerSocialNetwork(Base):
 class Resource(Base):
     __tablename__ = "resources"
 
-    resourceID: Mapped[int] = mapped_column(IDENTITY_TYPE, primary_key=True, autoincrement=True)
+    resourceID: Mapped[int] = mapped_column(identityType, primary_key=True, autoincrement=True)
     playerSocialNetworkID: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("playersSocialNetwork.playerSocialNetworkID")
     )
@@ -128,7 +128,7 @@ class Resource(Base):
 class Proposition(Base):
     __tablename__ = "propositions"
 
-    propositionID: Mapped[int] = mapped_column(IDENTITY_TYPE, primary_key=True, autoincrement=True)
+    propositionID: Mapped[int] = mapped_column(identityType, primary_key=True, autoincrement=True)
     creatorPlayerID: Mapped[int] = mapped_column(BigInteger, ForeignKey("players.playerID"))
     targetPlayerID: Mapped[int] = mapped_column(BigInteger, ForeignKey("players.playerID"))
     relatedResourceID: Mapped[int] = mapped_column(BigInteger, ForeignKey("resources.resourceID"))
@@ -164,7 +164,7 @@ class PropositionPredictionCurrency(Base):
 class PredictionType(Base):
     __tablename__ = "predictionTypes"
 
-    predictionTypeID: Mapped[int] = mapped_column(IDENTITY_TYPE, primary_key=True, autoincrement=True)
+    predictionTypeID: Mapped[int] = mapped_column(identityType, primary_key=True, autoincrement=True)
     predictionTypeName: Mapped[str] = mapped_column(String(50), unique=True)
     predictionTypeDescription: Mapped[str] = mapped_column(String(150))
     isActive: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -174,7 +174,7 @@ class PredictionType(Base):
 class Prediction(Base):
     __tablename__ = "predictions"
 
-    predictionID: Mapped[int] = mapped_column(IDENTITY_TYPE, primary_key=True, autoincrement=True)
+    predictionID: Mapped[int] = mapped_column(identityType, primary_key=True, autoincrement=True)
     propositionID: Mapped[int] = mapped_column(BigInteger, ForeignKey("propositions.propositionID"))
     playerID: Mapped[int] = mapped_column(BigInteger, ForeignKey("players.playerID"))
     predictionTypeID: Mapped[int] = mapped_column(BigInteger, ForeignKey("predictionTypes.predictionTypeID"))
@@ -189,7 +189,7 @@ class Prediction(Base):
 class PredictionStake(Base):
     __tablename__ = "predictionStakes"
 
-    predictionStakeID: Mapped[int] = mapped_column(IDENTITY_TYPE, primary_key=True, autoincrement=True)
+    predictionStakeID: Mapped[int] = mapped_column(identityType, primary_key=True, autoincrement=True)
     predictionID: Mapped[int] = mapped_column(BigInteger, ForeignKey("predictions.predictionID"))
     currencyID: Mapped[int] = mapped_column(BigInteger, ForeignKey("currencies.currencyID"))
     amount: Mapped[Decimal] = mapped_column(Numeric(18, 6))
@@ -201,7 +201,7 @@ class PredictionStake(Base):
 class PredictionResult(Base):
     __tablename__ = "predictionResults"
 
-    predictionResultID: Mapped[int] = mapped_column(IDENTITY_TYPE, primary_key=True, autoincrement=True)
+    predictionResultID: Mapped[int] = mapped_column(identityType, primary_key=True, autoincrement=True)
     predictionID: Mapped[int] = mapped_column(BigInteger, ForeignKey("predictions.predictionID"))
     didWin: Mapped[bool] = mapped_column(Boolean)
     determinedAt: Mapped[datetime] = mapped_column(DateTime)
@@ -213,7 +213,7 @@ class PredictionResult(Base):
 class PropositionResult(Base):
     __tablename__ = "propositionResult"
 
-    propositionResultID: Mapped[int] = mapped_column(IDENTITY_TYPE, primary_key=True, autoincrement=True)
+    propositionResultID: Mapped[int] = mapped_column(identityType, primary_key=True, autoincrement=True)
     propositionID: Mapped[int] = mapped_column(BigInteger, ForeignKey("propositions.propositionID"))
     resultTypeID: Mapped[int] = mapped_column(BigInteger)
     propositionFulfilled: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
@@ -227,7 +227,7 @@ class PropositionResult(Base):
 class Transaction(Base):
     __tablename__ = "transactions"
 
-    transactionID: Mapped[int] = mapped_column(IDENTITY_TYPE, primary_key=True, autoincrement=True)
+    transactionID: Mapped[int] = mapped_column(identityType, primary_key=True, autoincrement=True)
     playerID: Mapped[int] = mapped_column(BigInteger, ForeignKey("players.playerID"))
     transactionTypeCodeID: Mapped[int] = mapped_column(BigInteger)
     propositionID: Mapped[int | None] = mapped_column(BigInteger, nullable=True)

@@ -12,14 +12,22 @@ Los scripts SQL ubicados en la raíz se conservan intencionalmente como versione
 
 ## Ejecutar el conjunto local
 
+Primero configure las variables de conexión a SQL Server y asegúrese de que
+Flyway haya aplicado las migraciones V001-V004 sobre la base `Gathel`.
+
+Ejemplo:
+
 ```bash
-cd backend
-GATHEL_DEMO_MODE=true python3 app.py
+export GATHEL_SQL_HOST=localhost
+export GATHEL_SQL_USER=gathel_app
+export GATHEL_SQL_PASSWORD='123'
+python3 backend/app.py
 ```
 
 Abra `http://127.0.0.1:5080`.
 
-El modo demo usa una base SQLite local para ejecutar el conjunto sin instalar componentes. Para utilizar el seeding completo de SQL Server, consulte la configuración en [backend/README.md](./backend/README.md).
+El frontend y el backend trabajan directamente contra SQL Server. Consulte la
+configuración completa en [backend/README.md](./backend/README.md).
 
 ## Ejecutar con Docker y SQL Server en Windows
 

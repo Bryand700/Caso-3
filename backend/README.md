@@ -11,8 +11,8 @@ Navegador → API Python local → SQLAlchemy → SQL Server
                          para escrituras
 ```
 
-- Las lecturas utilizan SQLAlchemy ORM.
-- En modo SQL Server, las escrituras llaman `sp_CreateProposition` y `sp_CreatePrediction`.
+- Las lecturas utilizan SQLAlchemy ORM contra SQL Server.
+- Las escrituras llaman `sp_CreateProposition` y `sp_CreatePrediction`.
 - El pool es fijo y pequeño: 3 conexiones por defecto.
 - El mismo proceso sirve el frontend, por lo que no es necesario configurar CORS en uso normal.
 
@@ -118,7 +118,6 @@ notepad .env
 Configure:
 
 ```text
-GATHEL_DEMO_MODE=false
 GATHEL_API_PORT=5080
 GATHEL_DB_POOL_SIZE=3
 GATHEL_SQL_HOST=host.docker.internal
@@ -204,27 +203,7 @@ Problemas habituales:
 - La clave del `.env` no coincide con el login.
 - Flyway todavía no aplicó V003 o V004.
 
-## Ejecución inmediata sin instalaciones
-
-SQLAlchemy ya está disponible en el ambiente actual. Desde la raíz:
-
-```bash
-cd backend
-GATHEL_DEMO_MODE=true python3 app.py
-```
-
-Abra `http://127.0.0.1:5080`.
-
-Credenciales de demostración:
-
-```text
-Correo: daniela@gathel.local
-Contraseña: DemoGathel2026
-```
-
-Este modo crea `backend/gathel-demo.db` para comprobar el conjunto frontend/API. Es únicamente una alternativa local de desarrollo.
-
-## Conectar el SQL Server real
+## Ejecutar conectado a SQL Server
 
 Se necesita el controlador de Python para ODBC:
 
@@ -237,12 +216,10 @@ También debe estar instalado Microsoft ODBC Driver 18 for SQL Server.
 Ejemplo:
 
 ```bash
-export GATHEL_DEMO_MODE=false
 export GATHEL_SQL_HOST=localhost
 export GATHEL_SQL_USER=gathel_app
 export GATHEL_SQL_PASSWORD='Cambiar#EstaClave2026'
-cd backend
-python3 app.py
+python3 backend/app.py
 ```
 
 Flyway debe haber aplicado primero las migraciones, incluida V004 con los Stored Procedures.

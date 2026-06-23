@@ -2,19 +2,17 @@ from __future__ import annotations
 
 import json
 import mimetypes
-import secrets
 from datetime import datetime
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from secrets import token_urlsafe as tokenUrlSafe
+from urllib.parse import parse_qs as parseQs, urlparse
 
 from sqlalchemy import text
 
 from config import settings
-from database import session_scope
-from demo_seed import initialize_demo_database
-from repositories import GathelReadRepository, player_json
+from database import sessionScope
+from repositories import GathelReadRepository, playerJson
 from services import GathelWriteService
 
 
@@ -46,9 +44,9 @@ class GathelHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         try:
             if parsed.path.startswith("/api/"):
-                self._handle_api(parsed.path, parse_qs(parsed.query))
+                self._handleApi(parsed.path, parseQs(parsed.query))
             elif self.command == "GET":
-                self._serve_frontend(parsed.path)
+                self._serveFrontend(parsed.path)
             else:
                 raise ApiError(HTTPStatus.NOT_FOUND, "Ruta no encontrada.")
         except ApiError as error:
@@ -64,15 +62,15 @@ class GathelHandler(BaseHTTPRequestHandler):
                 {"error": "Ocurrió un error interno en el API local."},
             )
 
-    def _handle_api(self, path: str, query: dict[str, list[str]]):
+    def _handleApi(self, path: str, query: dict[str, list[str]]):
         if path == "/api/health" and self.command == "GET":
-            with session_scope() as session:
+            with sessionScope() as session:
                 session.execute(text("SELECT 1"))
             self._json(
                 HTTPStatus.OK,
                 {
                     "status": "ok",
-                    "mode": "demo" if settings.demo_mode else "sqlserver",
+                    "mode": "sqlserver",
                     "time": datetime.utcnow().isoformat(),
                 },
             )
@@ -80,7 +78,7 @@ class GathelHandler(BaseHTTPRequestHandler):
 
         if path == "/api/auth/login" and self.command == "POST":
             payload = self._body()
-            with session_scope() as session:
+            with sessionScope() as session:
                 repository = GathelReadRepository(session)
                 player = repository.authenticate(
                     str(payload.get("identifier", "")),
@@ -88,27 +86,27 @@ class GathelHandler(BaseHTTPRequestHandler):
                 )
                 if not player:
                     raise ApiError(HTTPStatus.UNAUTHORIZED, "Credenciales inválidas.")
-                token = secrets.token_urlsafe(32)
+                token = tokenUrlSafe(32)
                 TOKENS[token] = player.playerID
                 self._json(
                     HTTPStatus.OK,
-                    {"token": token, "player": player_json(player)},
+                    {"token": token, "player": playerJson(player)},
                 )
             return
 
         if path == "/api/auth/logout" and self.command == "POST":
-            token = self._bearer_token()
+            token = self._bearerToken()
             TOKENS.pop(token, None)
             self._json(HTTPStatus.OK, {"ok": True})
             return
 
-        player_id = self._authenticated_player()
+        playerId = self._authenticatedPlayer()
 
-        with session_scope() as session:
+        with sessionScope() as session:
             repository = GathelReadRepository(session)
 
             if path == "/api/me/dashboard" and self.command == "GET":
-                self._json(HTTPStatus.OK, repository.dashboard(player_id))
+                self._json(HTTPStatus.OK, repository.dashboard(playerId))
                 return
 
             if path == "/api/players" and self.command == "GET":
@@ -121,7 +119,7 @@ class GathelHandler(BaseHTTPRequestHandler):
             if path == "/api/propositions" and self.command == "GET":
                 self._json(
                     HTTPStatus.OK,
-                    repository.active_propositions(
+                    repository.activePropositions(
                         search=query.get("search", [""])[0],
                         limit=int(query.get("limit", ["100"])[0]),
                     ),
@@ -132,7 +130,7 @@ class GathelHandler(BaseHTTPRequestHandler):
                 self._json(
                     HTTPStatus.OK,
                     repository.results(
-                        player_id,
+                        playerId,
                         limit=int(query.get("limit", ["100"])[0]),
                     ),
                 )
@@ -140,37 +138,37 @@ class GathelHandler(BaseHTTPRequestHandler):
 
             writer = GathelWriteService(session)
             if path == "/api/propositions" and self.command == "POST":
-                proposition_id = writer.create_proposition(player_id, self._body())
+                propositionId = writer.createProposition(playerId, self._body())
                 self._json(
                     HTTPStatus.CREATED,
-                    {"propositionId": proposition_id, "status": "pending"},
+                    {"propositionId": propositionId, "status": "pending"},
                 )
                 return
 
             if path == "/api/predictions" and self.command == "POST":
-                prediction_id = writer.create_prediction(player_id, self._body())
+                predictionId = writer.createPrediction(playerId, self._body())
                 self._json(
                     HTTPStatus.CREATED,
-                    {"predictionId": prediction_id, "status": "active"},
+                    {"predictionId": predictionId, "status": "active"},
                 )
                 return
 
         raise ApiError(HTTPStatus.NOT_FOUND, "Ruta no encontrada.")
 
-    def _serve_frontend(self, requested_path: str):
-        relative = requested_path.lstrip("/") or "index.html"
-        candidate = (settings.frontend_dir / relative).resolve()
-        frontend_root = settings.frontend_dir.resolve()
+    def _serveFrontend(self, requestedPath: str):
+        relative = requestedPath.lstrip("/") or "index.html"
+        candidate = (settings.frontendDir / relative).resolve()
+        frontendRoot = settings.frontendDir.resolve()
 
-        if frontend_root not in candidate.parents and candidate != frontend_root:
+        if frontendRoot not in candidate.parents and candidate != frontendRoot:
             raise ApiError(HTTPStatus.FORBIDDEN, "Ruta inválida.")
         if not candidate.is_file():
-            candidate = frontend_root / "index.html"
+            candidate = frontendRoot / "index.html"
 
-        mime_type = mimetypes.guess_type(candidate.name)[0] or "application/octet-stream"
+        mimeType = mimetypes.guess_type(candidate.name)[0] or "application/octet-stream"
         data = candidate.read_bytes()
         self.send_response(HTTPStatus.OK)
-        self.send_header("Content-Type", mime_type)
+        self.send_header("Content-Type", mimeType)
         self.send_header("Content-Length", str(len(data)))
         self.send_header("Cache-Control", "no-cache")
         self.end_headers()
@@ -185,18 +183,18 @@ class GathelHandler(BaseHTTPRequestHandler):
         except json.JSONDecodeError as error:
             raise ApiError(HTTPStatus.BAD_REQUEST, "JSON inválido.") from error
 
-    def _bearer_token(self) -> str:
+    def _bearerToken(self) -> str:
         authorization = self.headers.get("Authorization", "")
         if not authorization.startswith("Bearer "):
             raise ApiError(HTTPStatus.UNAUTHORIZED, "Falta el token de sesión.")
         return authorization.removeprefix("Bearer ").strip()
 
-    def _authenticated_player(self) -> int:
-        token = self._bearer_token()
-        player_id = TOKENS.get(token)
-        if not player_id:
+    def _authenticatedPlayer(self) -> int:
+        token = self._bearerToken()
+        playerId = TOKENS.get(token)
+        if not playerId:
             raise ApiError(HTTPStatus.UNAUTHORIZED, "La sesión expiró o no es válida.")
-        return player_id
+        return playerId
 
     def _json(self, status: int, payload: dict | list):
         encoded = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -217,13 +215,10 @@ class GathelHandler(BaseHTTPRequestHandler):
 
 
 def main():
-    if settings.demo_mode:
-        initialize_demo_database()
-
     server = ThreadingHTTPServer((settings.host, settings.port), GathelHandler)
     print(
         f"Gathel local ejecutándose en http://{settings.host}:{settings.port} "
-        f"({'demo SQLite' if settings.demo_mode else 'SQL Server'})"
+        "(SQL Server)"
     )
     try:
         server.serve_forever()

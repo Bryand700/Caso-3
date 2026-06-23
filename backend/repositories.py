@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_ as orCondition, select
 from sqlalchemy.orm import Session, aliased
 
 from models import (
@@ -25,7 +25,7 @@ from models import (
 )
 
 
-def decimal_value(value: Decimal | None) -> float:
+def decimalValue(value: Decimal | None) -> float:
     return float(value or 0)
 
 
@@ -38,7 +38,7 @@ class GathelReadRepository:
         player = self.session.scalar(
             select(Player).where(
                 Player.isActive == True,
-                or_(
+                    orCondition(
                     func.lower(Player.email) == normalized,
                     func.lower(Player.username) == normalized,
                 ),
@@ -48,15 +48,15 @@ class GathelReadRepository:
             return player
         return None
 
-    def player(self, player_id: int) -> Player | None:
-        return self.session.get(Player, player_id)
+    def player(self, playerId: int) -> Player | None:
+        return self.session.get(Player, playerId)
 
     def players(self, search: str = "") -> list[dict]:
         statement = select(Player).where(Player.isActive == True)
         if search:
             pattern = f"%{search.strip().lower().lstrip('@')}%"
             statement = statement.where(
-                or_(
+                orCondition(
                     func.lower(Player.username).like(pattern),
                     func.lower(Player.firstName + " " + Player.lastName).like(pattern),
                 )
@@ -71,32 +71,32 @@ class GathelReadRepository:
             for row in rows
         ]
 
-    def dashboard(self, player_id: int) -> dict:
-        player = self.player(player_id)
+    def dashboard(self, playerId: int) -> dict:
+        player = self.player(playerId)
         if not player:
             raise LookupError("Jugador no encontrado.")
 
-        point_balance = self.session.execute(
+        pointBalance = self.session.execute(
             select(Balance.availableAmount)
             .join(Currency, Currency.currencyID == Balance.currencyID)
             .where(
-                Balance.playerID == player_id,
+                Balance.playerID == playerId,
                 Balance.isCurrent == True,
                 Currency.currencyCode == "POINT",
             )
         ).scalar_one_or_none()
 
-        money_balance = self.session.execute(
+        moneyBalance = self.session.execute(
             select(MoneyBalance.availableAmount, Currency.currencyCode)
             .join(Currency, Currency.currencyID == MoneyBalance.currencyID)
             .where(
-                MoneyBalance.playerID == player_id,
+                MoneyBalance.playerID == playerId,
                 MoneyBalance.isActive == True,
                 Currency.currencyCode == "USD",
             )
         ).first()
 
-        active_predictions = self.session.scalar(
+        activePredictions = self.session.scalar(
             select(func.count(Prediction.predictionID))
             .join(Proposition, Proposition.propositionID == Prediction.propositionID)
             .join(
@@ -104,16 +104,16 @@ class GathelReadRepository:
                 PropositionStatus.propositionStatusID == Proposition.propositionStatusID,
             )
             .where(
-                Prediction.playerID == player_id,
+                Prediction.playerID == playerId,
                 Prediction.isActive == True,
                 PropositionStatus.statusName == "activa",
             )
         )
 
-        recent_transactions = self.session.execute(
+        recentTransactions = self.session.execute(
             select(Transaction, Currency)
             .join(Currency, Currency.currencyID == Transaction.currencyID)
-            .where(Transaction.playerID == player_id)
+            .where(Transaction.playerID == playerId)
             .order_by(Transaction.transactionDate.desc())
             .limit(5)
         ).all()
@@ -122,27 +122,27 @@ class GathelReadRepository:
             {
                 "id": transaction.transactionID,
                 "title": transaction.description or "Movimiento de balance",
-                "detail": f"{decimal_value(transaction.amount):.2f} {currency.currencyCode}",
+                "detail": f"{decimalValue(transaction.amount):.2f} {currency.currencyCode}",
                 "occurredAt": transaction.transactionDate.isoformat(),
             }
-            for transaction, currency in recent_transactions
+            for transaction, currency in recentTransactions
         ]
 
         return {
-            "player": player_json(player),
+            "player": playerJson(player),
             "balances": {
-                "points": decimal_value(point_balance),
-                "money": decimal_value(money_balance[0]) if money_balance else 0,
-                "moneyCurrency": money_balance[1] if money_balance else "USD",
+                "points": decimalValue(pointBalance),
+                "money": decimalValue(moneyBalance[0]) if moneyBalance else 0,
+                "moneyCurrency": moneyBalance[1] if moneyBalance else "USD",
             },
-            "activePredictions": int(active_predictions or 0),
+            "activePredictions": int(activePredictions or 0),
             "activity": activities,
         }
 
-    def active_propositions(self, search: str = "", limit: int = 100) -> list[dict]:
+    def activePropositions(self, search: str = "", limit: int = 100) -> list[dict]:
         target = aliased(Player)
         creator = aliased(Player)
-        prediction_count = (
+        predictionCount = (
             select(
                 Prediction.propositionID.label("propositionID"),
                 func.count(Prediction.predictionID).label("predictionCount"),
@@ -158,7 +158,7 @@ class GathelReadRepository:
                 creator,
                 Resource,
                 ResourceType,
-                func.coalesce(prediction_count.c.predictionCount, 0),
+                func.coalesce(predictionCount.c.predictionCount, 0),
             )
             .join(target, target.playerID == Proposition.targetPlayerID)
             .join(creator, creator.playerID == Proposition.creatorPlayerID)
@@ -169,8 +169,8 @@ class GathelReadRepository:
                 PropositionStatus.propositionStatusID == Proposition.propositionStatusID,
             )
             .outerjoin(
-                prediction_count,
-                prediction_count.c.propositionID == Proposition.propositionID,
+                predictionCount,
+                predictionCount.c.propositionID == Proposition.propositionID,
             )
             .where(
                 Proposition.isActive == True,
@@ -182,7 +182,7 @@ class GathelReadRepository:
         if search:
             pattern = f"%{search.strip().lower()}%"
             statement = statement.where(
-                or_(
+                orCondition(
                     func.lower(Proposition.propositionText).like(pattern),
                     func.lower(target.username).like(pattern),
                     func.lower(target.firstName + " " + target.lastName).like(pattern),
@@ -191,7 +191,7 @@ class GathelReadRepository:
 
         rows = self.session.execute(statement).all()
         result = []
-        for proposition, target_player, creator_player, resource, resource_type, count in rows:
+        for proposition, targetPlayer, creatorPlayer, resource, resourceType, count in rows:
             currencies = self.session.scalars(
                 select(Currency.currencyCode)
                 .join(
@@ -207,21 +207,21 @@ class GathelReadRepository:
                 {
                     "id": proposition.propositionID,
                     "title": proposition.propositionText,
-                    "target": player_json(target_player),
-                    "creator": player_json(creator_player),
+                    "target": playerJson(targetPlayer),
+                    "creator": playerJson(creatorPlayer),
                     "deadline": proposition.predictionsDeadline.isoformat(),
                     "status": "active",
                     "currencies": currencies,
                     "predictionCount": int(count),
                     "resource": {
-                        "type": resource_type.resourceTypeName,
+                        "type": resourceType.resourceTypeName,
                         "url": resource.contentURL,
                     },
                 }
             )
         return result
 
-    def results(self, player_id: int, limit: int = 100) -> list[dict]:
+    def results(self, playerId: int, limit: int = 100) -> list[dict]:
         rows = self.session.execute(
             select(
                 Proposition,
@@ -241,7 +241,7 @@ class GathelReadRepository:
                 PropositionResult,
                 PropositionResult.propositionID == Proposition.propositionID,
             )
-            .where(Prediction.playerID == player_id)
+            .where(Prediction.playerID == playerId)
             .order_by(PredictionResult.determinedAt.desc())
             .limit(min(max(limit, 1), 200))
         ).all()
@@ -250,26 +250,26 @@ class GathelReadRepository:
             {
                 "id": proposition.propositionID,
                 "title": proposition.propositionText,
-                "fulfilled": proposition_result.propositionFulfilled,
-                "prediction": prediction_type.predictionTypeName,
-                "didWin": prediction_result.didWin,
-                "stake": decimal_value(stake.amount),
+                "fulfilled": propositionResult.propositionFulfilled,
+                "prediction": predictionType.predictionTypeName,
+                "didWin": predictionResult.didWin,
+                "stake": decimalValue(stake.amount),
                 "currency": currency.currencyCode,
-                "determinedAt": prediction_result.determinedAt.isoformat(),
+                "determinedAt": predictionResult.determinedAt.isoformat(),
             }
             for (
                 proposition,
-                proposition_result,
+                propositionResult,
                 prediction,
-                prediction_type,
+                predictionType,
                 stake,
                 currency,
-                prediction_result,
+                predictionResult,
             ) in rows
         ]
 
 
-def player_json(player: Player) -> dict:
+def playerJson(player: Player) -> dict:
     return {
         "id": player.playerID,
         "name": f"{player.firstName} {player.lastName}",
