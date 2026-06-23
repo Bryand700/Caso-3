@@ -240,4 +240,4 @@ Flyway debe haber aplicado primero las migraciones, incluida V004 con los Stored
 
 ## Nota de autenticación
 
-El seeding vigente guarda contraseñas de demostración en `passwordHash` como texto. El API replica ese comportamiento solamente para cumplir el MVP existente. Antes de cualquier uso real debe sustituirse por hashes seguros.
+El seeding vigente guarda las contraseñas de los jugadores sembrados en `passwordHash` como texto. El API replica ese comportamiento solamente para cumplir el MVP académico existente. Antes de cualquier uso real debe sustituirse por hashes seguros.
