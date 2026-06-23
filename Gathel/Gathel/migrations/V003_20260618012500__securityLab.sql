@@ -260,7 +260,7 @@ RETURN
               OR playerMap.playerID = @targetPlayerID
           )
     )
-    OR USER_NAME() = N''lab_auditor''
+    OR USER_NAME() IN (N''dbo'', N''lab_auditor'')
     OR EXISTS
     (
         SELECT 1
